@@ -1,3 +1,5 @@
 prometheus-pandas
 requests
 GitPython
+click
+loguru

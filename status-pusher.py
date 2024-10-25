@@ -5,33 +5,40 @@ import timeit
 import tempfile
 import os
 import datetime
-import logging
-from prometheus_pandas import query
+from loguru import logger
+from  prometheus_pandas.query import Prometheus 
 from git import Repo
+import click
+import shutil
 
 
-INTERVAL = int(os.environ.get("STATUS_PUSHER_INTERVAL",300))
-QUERY = os.environ.get("STATUS_PUSHER_QUERY", None)
-TIME_RANGE = int(os.environ.get("STATUS_PUSHER_TIME_RANGE",300)) # TODO
-PROMETHEUS_URL = os.environ.get("STATUS_PUSHER_PROMETHEUS_URL", 'http://prometheus:8086/')
-GIT_URL = os.environ.get("STATUS_PUSHER_GIT_URL", 'http://github.com/org/repo/')
-GIT_BRANCH = os.environ.get("STATUS_PUSHER_GIT_BRANCH", 'dev')
-GIT_DIR = os.environ.get('STATUS_PUSHER_GIT_DIR', '/tmp/repo')
+def git_clone( git_url: str, git_branch: str, git_dir, clear=True ):
+  """create the local git clone"""
+  logger.debug(f'setting up git clone of {git_url}:{git_branch} to {git_dir}')
+  if os.path.isdir( git_dir ) and clear:
+    logger.debug(f'removing existing git directory {git_dir}')
+    shutil.rmtree( git_dir )
+  cloned_repo = Repo.clone_from( git_url, git_dir )
+  return cloned_repo
 
-VERBOSE = bool(os.environ.get("STATUS_PUSHER_VERBOSE",False))
+def prometheus_query( query: str, prometheus_url: str ):
+  """query prometheus"""
+  logger.debug(f'querying {prometheus_url} with "{query}"')
+  p = Prometheus( prometheus_url )
+  return p.query( query )
 
-logging.basicConfig(level=logging.DEBUG if VERBOSE else logging.INFO)
-
-
-def main():
-
-  
-  cloned_repo = Repo.clone_from( GIT_URL, GIT_DIR )
-
-
-  p = query.Prometheus( PROMETHEUS_URL )
-  out = p.query( QUERY )
-  logging.info( f'{out}' )
+@click.command()
+@click.option( '--query', envvar='QUERY', required=True, help='query to gather metrics with' )
+@click.option( '--prometheus-url', envvar='PROMETHEUS_URL', default='http://prometheus:8086/', show_default=True, help='url for prometheus endpoint' )
+@click.option( '--git-url', envvar='GIT_URL', default='http://github.com/org/repo/', show_default=True, help='git repo for status files' )
+@click.option( '--git-branch', envvar='GIT_BRANCH', default='main', show_default=True, help='git branch to use' )
+@click.option( '--git-dir', envvar='GIT_DIR', default='/tmp/repo', show_default=True, help='local path for git cloned repo' )
+@click.option( '--verbose', envvar='VERBOSE', default=False, is_flag=True, show_default=True, help='add debug output' )
+def cli( query: str, prometheus_url: str, git_url: str, git_branch: str, git_dir: str ) -> bool:
+  """Queries a metrics source and updates a status file in git"""
+  g = git_clone( git_url, git_branch, git_dir )
+  data = prometheus_query( query, prometheus_url )
+  logger.info( f'{data}' )
 
 if __name__ == '__main__':
-  main()
+  cli( auto_envvar_prefix='STATUS_PUSHER' )
