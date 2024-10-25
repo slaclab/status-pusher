@@ -14,14 +14,44 @@ import shutil
 from typing import Tuple
 
 
-def git_clone( git_url: str, git_branch: str, git_dir, clear=True ):
+def git_clone( git_url: str, git_branch: str, git_dir, clear=False ):
   """create the local git clone"""
   logger.debug(f'setting up git clone of {git_url}:{git_branch} to {git_dir}')
-  if os.path.isdir( git_dir ) and clear:
-    logger.debug(f'removing existing git directory {git_dir}')
-    shutil.rmtree( git_dir )
+  if os.path.isdir( git_dir ):
+    if clear:
+      logger.debug(f'removing existing git directory {git_dir}')
+      shutil.rmtree( git_dir )
+    else:
+      # TODO: validate real git repo
+      return Repo( git_dir )
+
   cloned_repo = Repo.clone_from( git_url, git_dir )
+
+  # TODO: check out branch
+
   return cloned_repo
+
+def epoch_to_zulu( ts: float ) -> str:
+    dt = datetime.datetime.fromtimestamp(ts, datetime.timezone.utc)
+    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+def update_log_file( filepath: str, timestamp: float, value: float, state: str ) -> bool:
+  """append measurement to the text file"""
+  line = f'{epoch_to_zulu(timestamp)}, {state}, {value}'
+  logger.debug(f'appending to {filepath}: {line}')
+  with open( filepath, 'a+') as report:
+    report.write( line + "\n" )
+  return True
+
+def commit_and_push( git_repo, filepath: str, commit_message='[automated] update health report') -> bool:
+  """commit and push changes to git"""
+  logger.debug(f'committing updates to {filepath}')
+  index = git_repo.index
+  index.add( [filepath] )
+  index.commit( commit_message )
+  # TODO push... need token etc.
+
+  return True
 
 # TODO: deprecate
 def prometheus_pandas_query( query: str, prometheus_url: str ):
@@ -43,16 +73,20 @@ def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]
 
 @click.command()
 @click.option( '--query', envvar='QUERY', required=True, help='query to gather metrics with' )
+@click.option( '--filepath', envvar='FILEPATH', required=True, help='filepath to append measurements to relative to root of git repo directory' )
 @click.option( '--prometheus-url', envvar='PROMETHEUS_URL', default='http://prometheus:8086/', show_default=True, help='url for prometheus endpoint' )
 @click.option( '--git-url', envvar='GIT_URL', default='http://github.com/org/repo/', show_default=True, help='git repo for status files' )
 @click.option( '--git-branch', envvar='GIT_BRANCH', default='main', show_default=True, help='git branch to use' )
 @click.option( '--git-dir', envvar='GIT_DIR', default='/tmp/repo', show_default=True, help='local path for git cloned repo' )
 @click.option( '--verbose', envvar='VERBOSE', default=False, is_flag=True, show_default=True, help='add debug output' )
-def cli( query: str, prometheus_url: str, git_url: str, git_branch: str, git_dir: str, verbose: bool ) -> bool:
+def cli( query: str, prometheus_url: str, git_url: str, git_branch: str, git_dir: str, filepath: str, verbose: bool ) -> bool:
   """Queries a metrics source and updates a status file in git"""
-  g = git_clone( git_url, git_branch, git_dir )
+  git_repo = git_clone( git_url, git_branch, git_dir )
   epoch_ts, value = prometheus_query( query, prometheus_url )
   logger.info( f'got data at ts {epoch_ts}: {value}' )
+  report_file = git_dir + '/' + filepath
+  update_log_file( report_file, epoch_ts, value, 'success' ) 
+  commit_and_push( git_repo, report_file )
 
 if __name__ == '__main__':
   cli( auto_envvar_prefix='STATUS_PUSHER' )
