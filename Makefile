@@ -18,4 +18,4 @@ push:
 	$(CONTAINER_RT) push $(REPO):$(TAG)
  
 test:
-	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' STATUS_PUSHER_QUERY='nmap_port_state{service=`ssh`,group=`s3df`}' ./bin/python3 status-pusher.py
+	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' ./bin/python3 status-pusher.py
