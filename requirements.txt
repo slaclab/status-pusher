@@ -1,4 +1,3 @@
-prometheus-pandas
 prometheus-api-client
 requests
 GitPython

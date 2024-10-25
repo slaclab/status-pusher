@@ -6,7 +6,6 @@ import tempfile
 import os
 import datetime
 from loguru import logger
-from  prometheus_pandas.query import Prometheus 
 from prometheus_api_client import PrometheusConnect
 from git import Repo
 import click
@@ -52,13 +51,6 @@ def commit_and_push( git_repo, filepath: str, commit_message='[automated] update
   # TODO push... need token etc.
 
   return True
-
-# TODO: deprecate
-def prometheus_pandas_query( query: str, prometheus_url: str ):
-  """query prometheus using prometheus_pands"""
-  logger.debug(f'querying {prometheus_url} with "{query}"')
-  p = Prometheus( prometheus_url )
-  return p.query( query )
 
 def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]:
   """query prometheus using stock libraries"""
