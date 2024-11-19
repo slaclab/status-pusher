@@ -1,6 +1,15 @@
+SECRET_PATH ?= 'secret/scs/github/pat'
+SECRET_TEMPFILE ?= './.secrets'
 CONTAINER_RT ?= podman
 REPO ?= slaclab/status-pusher
 TAG ?= latest
+
+secrets:
+	mkdir -p ./.secrets
+	set -e; for i in s3df-status-pusher; do vault kv get --field=$$i $(SECRET_PATH) > $(SECRET_TEMPFILE)/$$i ; done
+
+clean-secrets:
+	rm -rf $(SECRET_TEMPFILE)
 
 venv:
 	python3 -m venv .
