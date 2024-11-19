@@ -5,6 +5,7 @@ lib
 lib64
 pyvenv.cfg
 pip-selfcheck.json
+share
 
 # vi
 .*.swp
