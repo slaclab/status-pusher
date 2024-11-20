@@ -3,6 +3,7 @@ SECRET_TEMPFILE ?= './.secrets'
 CONTAINER_RT ?= podman
 REPO ?= slaclab/status-pusher
 TAG ?= latest
+GIT_TOKEN ?= '<GIT_TOKEN NOT PROVIDED>'
 
 
 secrets:
@@ -34,4 +35,5 @@ test:
     STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu'\
     STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
     STATUS_PUSHER_FILEPATH=public/status/test_report.log \
+    STATUS_PUSHER_GIT_TOKEN='fake_token' \
     ./bin/python3 status-pusher.py
