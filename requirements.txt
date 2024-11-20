@@ -3,3 +3,4 @@ requests
 GitPython
 click
 loguru
+pytest
