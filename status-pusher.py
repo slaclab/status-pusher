@@ -10,6 +10,7 @@ from prometheus_api_client import PrometheusConnect
 import git
 import click
 import shutil
+from pathlib import PosixPath
 from typing import Tuple
 
 
@@ -34,11 +35,11 @@ def epoch_to_zulu( ts: float ) -> str:
   dt = datetime.datetime.fromtimestamp(ts, datetime.timezone.utc)
   return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-def update_log_file( filepath: str, timestamp: float, value: float, state: str ) -> bool:
+def update_log_file( filepath: PosixPath, timestamp: float, value: float, state: str ) -> bool:
   """append measurement to the text file"""
   line = f'{epoch_to_zulu(timestamp)}, {state}, {value}'
   logger.debug(f'appending to {filepath}: {line}')
-  with open( filepath, 'a+') as report:
+  with filepath.open(mode='a+') as report:
     report.write( line + "\n" )
   return True
 
@@ -81,7 +82,7 @@ def cli( query: str, prometheus_url: str, git_url: str, git_token: str, git_bran
   git_repo = git_clone( git_url, git_branch, git_dir )
   epoch_ts, value = prometheus_query( query, prometheus_url )
   logger.info( f'got data at ts {epoch_ts}: {value}' )
-  report_file = git_dir + '/' + filepath
+  report_file = PosixPath( git_dir, filepath )
   update_log_file( report_file, epoch_ts, value, 'success' ) 
   commit( git_repo, report_file )
 
