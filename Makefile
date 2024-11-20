@@ -4,6 +4,7 @@ CONTAINER_RT ?= podman
 REPO ?= slaclab/status-pusher
 TAG ?= latest
 
+
 secrets:
 	mkdir -p ./.secrets
 	set -e; for i in s3df-status-pusher; do vault kv get --field=$$i $(SECRET_PATH) > $(SECRET_TEMPFILE)/$$i ; done
@@ -27,6 +28,7 @@ build:
 push:
 	$(CONTAINER_RT) push $(REPO):$(TAG)
  
+.PHONY: test
 test:
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
     STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu'\
