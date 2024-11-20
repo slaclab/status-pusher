@@ -15,10 +15,11 @@ venv:
 	python3 -m venv .
 
 pip:
+	./bin/pip3 install --upgrade pip
 	./bin/pip3 install -r requirements.txt
 
 clean:
-	rm -rf bin include lib  lib64
+	rm -rf bin include lib lib64 share
 
 build:
 	$(CONTAINER_RT) build -t $(REPO):$(TAG) .
