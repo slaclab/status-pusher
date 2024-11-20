@@ -7,7 +7,7 @@ import os
 import datetime
 from loguru import logger
 from prometheus_api_client import PrometheusConnect
-from git import Repo
+import git
 import click
 import shutil
 from typing import Tuple
@@ -22,9 +22,9 @@ def git_clone( git_url: str, git_branch: str, git_dir, clear=False ):
       shutil.rmtree( git_dir )
     else:
       # TODO: validate real git repo
-      return Repo( git_dir )
+      return git.Repo( git_dir )
 
-  cloned_repo = Repo.clone_from( git_url, git_dir )
+  cloned_repo = git.Repo.clone_from( git_url, git_dir )
 
   # TODO: check out branch
 
@@ -42,10 +42,9 @@ def update_log_file( filepath: str, timestamp: float, value: float, state: str )
     report.write( line + "\n" )
   return True
 
-def commit_and_push( 
-  git_repo: Repo,
+def commit( 
+  git_repo: git.Repo,
   filepath: str,
-  git_token: str,
   commit_message='[automated] update health report',
   ) -> bool:
 
@@ -55,7 +54,6 @@ def commit_and_push(
   index.add( [filepath] )
   index.commit( commit_message )
 
-  # TODO push... need token etc.
   return True
 
 def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]:
@@ -85,7 +83,10 @@ def cli( query: str, prometheus_url: str, git_url: str, git_token: str, git_bran
   logger.info( f'got data at ts {epoch_ts}: {value}' )
   report_file = git_dir + '/' + filepath
   update_log_file( report_file, epoch_ts, value, 'success' ) 
-  commit_and_push( git_repo, report_file, git_token)
+  commit( git_repo, report_file )
+
+  # TODO push repo
+  #push( git_repo, git_token)
 
 if __name__ == '__main__':
   cli( auto_envvar_prefix='STATUS_PUSHER' )
