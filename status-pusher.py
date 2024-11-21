@@ -97,6 +97,10 @@ def cli(
   commit( git_repo, report_file )
 
   # TODO push repo
+  # Note that auth implementation will vary between types of remote and auth mechanism.
+  # Note also that Github PAT token can (and may actually have to be) incorporated into the URL itself,
+  # but we don't want to have to include it in the URL just for testing and pulling, etc
+  # in the URL 
   if do_git_push:
     git_repo.remote.push(git_branch)
 
