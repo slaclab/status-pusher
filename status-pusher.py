@@ -43,7 +43,7 @@ def update_log_file( filepath: PosixPath, timestamp: float, value: float, state:
     report.write( line + "\n" )
   return True
 
-def commit( 
+def commit(
   git_repo: git.Repo,
   filepath: str,
   commit_message='[automated] update health report',
@@ -77,7 +77,17 @@ def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]
 @click.option( '--git-branch', envvar='GIT_BRANCH', default='main', show_default=True, help='git branch to use' )
 @click.option( '--git-dir', envvar='GIT_DIR', default='/tmp/repo', show_default=True, help='local path for git cloned repo' )
 @click.option( '--verbose', envvar='VERBOSE', default=False, is_flag=True, show_default=True, help='add debug output' )
-def cli( query: str, prometheus_url: str, git_url: str, git_token: str, git_branch: str, git_dir: str, filepath: str, verbose: bool ) -> bool:
+@click.option( '--do-git-push', envvar='GIT_PUSH', default=False, is_flag=True, show_default=True, help='Push to remote after commiting results' )
+def cli(
+  query: str,
+  prometheus_url: str,
+  git_url: str,
+  git_token: str,
+  git_branch: str,
+  git_dir: str,
+  filepath: str,
+  verbose: bool,
+  do_git_push: bool ) -> bool:
   """Queries a metrics source and updates a status file in git"""
   git_repo = git_clone( git_url, git_branch, git_dir )
   epoch_ts, value = prometheus_query( query, prometheus_url )
@@ -87,7 +97,8 @@ def cli( query: str, prometheus_url: str, git_url: str, git_token: str, git_bran
   commit( git_repo, report_file )
 
   # TODO push repo
-  #push( git_repo, git_token)
+  if do_git_push:
+    git_repo.remote.push(git_branch)
 
 if __name__ == '__main__':
   cli( auto_envvar_prefix='STATUS_PUSHER' )
