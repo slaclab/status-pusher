@@ -14,7 +14,7 @@ from pathlib import PosixPath
 from typing import Tuple
 
 
-def git_clone( git_url: str, git_branch: str, git_dir, clear=False ):
+def git_clone( git_url: str, git_branch: str, git_dir, clear=False ) -> git.Repo:
   """create the local git clone"""
   logger.debug(f'setting up git clone of {git_url}:{git_branch} to {git_dir}')
   if os.path.isdir( git_dir ):
@@ -96,13 +96,19 @@ def cli(
   update_log_file( report_file, epoch_ts, value, 'success' ) 
   commit( git_repo, report_file )
 
-  # TODO push repo
+  # push repo
   # Note that auth implementation will vary between types of remote and auth mechanism.
   # Note also that Github PAT token can (and may actually have to be) incorporated into the URL itself,
   # but we don't want to have to include it in the URL just for testing and pulling, etc
   # in the URL 
   if git_push_url:
-    git_repo.remote.push(git_branch)
+    # we can just use the gitcmd (git_repo.git) directly for everything if we want, if it's easier,
+    # but we must do so for things that aren't wrapped 
+    gitcmd=git_repo.git
+    # check if we already have a remote named 'push_origin', (with the magic token url we got)
+    if not hasattr(git.remotes, 'push_origin'):
+        gitcmd.remote('add', 'push_origin', git_push_url)
+    gr.remotes.push_origin.push()
 
 if __name__ == '__main__':
   cli( auto_envvar_prefix='STATUS_PUSHER' )
