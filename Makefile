@@ -5,6 +5,7 @@ REPO ?= slaclab/status-pusher
 TAG ?= latest
 GIT_TOKEN ?= '<GIT_TOKEN NOT PROVIDED>'
 
+default: test
 
 secrets:
 	mkdir -p ./.secrets
