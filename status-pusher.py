@@ -77,7 +77,7 @@ def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]
 @click.option( '--git-branch', envvar='GIT_BRANCH', default='main', show_default=True, help='git branch to use' )
 @click.option( '--git-dir', envvar='GIT_DIR', default='/tmp/repo', show_default=True, help='local path for git cloned repo' )
 @click.option( '--verbose', envvar='VERBOSE', default=False, is_flag=True, show_default=True, help='add debug output' )
-@click.option( '--do-git-push', envvar='GIT_PUSH', default=False, is_flag=True, show_default=True, help='Push to remote after commiting results' )
+@click.option( '--git-push-url', envvar='GIT_PUSH_URL', default=None ,show_default=True, help='URL to push to remote after commiting results. If not provided, updates will still be committed locally, but they will not be pushed to the remot.' )
 def cli(
   query: str,
   prometheus_url: str,
@@ -87,7 +87,7 @@ def cli(
   git_dir: str,
   filepath: str,
   verbose: bool,
-  do_git_push: bool ) -> bool:
+  git_push_url: str) -> bool:
   """Queries a metrics source and updates a status file in git"""
   git_repo = git_clone( git_url, git_branch, git_dir )
   epoch_ts, value = prometheus_query( query, prometheus_url )
@@ -101,7 +101,7 @@ def cli(
   # Note also that Github PAT token can (and may actually have to be) incorporated into the URL itself,
   # but we don't want to have to include it in the URL just for testing and pulling, etc
   # in the URL 
-  if do_git_push:
+  if git_push_url:
     git_repo.remote.push(git_branch)
 
 if __name__ == '__main__':
