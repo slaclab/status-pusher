@@ -108,7 +108,10 @@ def cli(
     # check if we already have a remote named 'push_origin', (with the magic token url we got)
     if not hasattr(git.remotes, 'push_origin'):
         gitcmd.remote('add', 'push_origin', git_push_url)
-    gr.remotes.push_origin.push()
+    push_origin=gr.remotes.push_origin
+    # always push before pull
+    push_origin.pull()
+    push_origin.push()
 
 if __name__ == '__main__':
   cli( auto_envvar_prefix='STATUS_PUSHER' )
