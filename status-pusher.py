@@ -16,15 +16,23 @@ from typing import Tuple
 
 def git_clone( git_url: str, git_branch: str, git_dir, clear=False ) -> git.Repo:
   """create the local git clone"""
-  logger.debug(f'setting up git clone of {git_url}:{git_branch} to {git_dir}')
+  logger.debug(f'git_clone checking for existing directory')
   if os.path.isdir( git_dir ):
     if clear:
       logger.debug(f'removing existing git directory {git_dir}')
       shutil.rmtree( git_dir )
     else:
       # Pull to be sure we're up to date
+      logger.debug(f'found existing directory {git_dir}')
+      logger.debug(f'checking that existing directory is a valid repo')
+
       git_repo=git.Repo( git_dir )
+      logger.debug(f'loaded existing git repo {git_repo}')
+
       origin=git_repo.remotes.origin
+      logger.debug(f'existing git repo has origin {origin}')
+
+      logger.debug(f'pulling from origin {origin}')
       origin.pull()
       return git.Repo( git_dir )
 
@@ -67,8 +75,12 @@ def push( git_repo: git.Repo, git_push_url ) -> git.remote.PushInfo:
       gitcmd.remote('add', 'push_origin', git_push_url)
   origin=gr.remotes._origin
   push_origin=gr.remotes.push_origin
+
   # always pull before push
+  logger.debug(f'pulling from origin {origin}')
   pull_res: git.remote.FetchInfo = origin.pull()
+
+  logger.debug(f'pushing to push_origin <REDACTED URL CONTAINING TOKEN>')
   push_res: git.remote.PushInfo = push_origin.push()
   return push_res
 
