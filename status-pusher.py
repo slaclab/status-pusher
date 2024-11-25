@@ -84,7 +84,6 @@ def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]
 @click.option( '--filepath', envvar='FILEPATH', required=True, help='filepath to append measurements to relative to root of git repo directory' )
 @click.option( '--prometheus-url', envvar='PROMETHEUS_URL', default='http://prometheus:8086/', show_default=True, help='url for prometheus endpoint' )
 @click.option( '--git-url', envvar='GIT_URL', default='http://github.com/org/repo/', show_default=True, help='git repo for status files' )
-@click.option( '--git-token', envvar='GIT_TOKEN', required=True, help='git PAT (Personal Access Token)' )
 @click.option( '--git-branch', envvar='GIT_BRANCH', default='main', show_default=True, help='git branch to use' )
 @click.option( '--git-dir', envvar='GIT_DIR', default='/tmp/repo', show_default=True, help='local path for git cloned repo' )
 @click.option( '--verbose', envvar='VERBOSE', default=False, is_flag=True, show_default=True, help='add debug output' )
@@ -93,7 +92,6 @@ def cli(
   query: str,
   prometheus_url: str,
   git_url: str,
-  git_token: str,
   git_branch: str,
   git_dir: str,
   filepath: str,

@@ -29,16 +29,15 @@ build:
 
 push:
 	$(CONTAINER_RT) push $(REPO):$(TAG)
- 
 
-# vars for live tests!
-
+################################
+# live tests against github repo
+################################
 test::
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
 	STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
-	STATUS_PUSHER_GIT_TOKEN='fake_token' \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
 	./bin/python3 status-pusher.py
 
@@ -47,7 +46,6 @@ test-push: secrets
 	STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
-	STATUS_PUSHER_GIT_TOKEN='fake_token' \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
 	GIT_TOKEN='$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)' \
 	echo $(GIT_TOKEN) \
