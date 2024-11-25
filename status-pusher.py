@@ -67,7 +67,7 @@ def commit(
   logger.debug(f'committing updates to {filepath}')
   index = git_repo.index
   index.add( [filepath] )
-  return  index.commit( commit_message )
+  return index.commit( commit_message )
 
 def push( git_repo: git.Repo, git_push_url ) -> git.remote.PushInfo:
   # we can just use the gitcmd (git_repo.git) directly for everything if we want, if it's easier,
