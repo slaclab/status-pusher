@@ -74,7 +74,7 @@ def push( git_repo: git.Repo, git_push_url ) -> git.remote.PushInfo:
   # but we must do so for things that aren't wrapped
   gitcmd=git_repo.git
   # check if we already have a remote named 'push_origin', (with the magic token url we got)
-  if not hasattr(git.remotes, 'push_origin'):
+  if not hasattr(git_repo.remotes, 'push_origin'):
       gitcmd.remote('add', 'push_origin', git_push_url)
   origin=git_repo.remotes.origin
   push_origin=git_repo.remotes.push_origin
