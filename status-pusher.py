@@ -47,15 +47,26 @@ def commit(
   git_repo: git.Repo,
   filepath: str,
   commit_message='[automated] update health report',
-  ) -> bool:
+  ) -> git.objects.commit.Commit:
 
   """commit and push changes to git"""
   logger.debug(f'committing updates to {filepath}')
   index = git_repo.index
   index.add( [filepath] )
-  index.commit( commit_message )
+  return  index.commit( commit_message )
 
-  return True
+def push( git_repo: git.Repo, git_push_url ) -> git.remote.PushInfo:
+  # we can just use the gitcmd (git_repo.git) directly for everything if we want, if it's easier,
+  # but we must do so for things that aren't wrapped
+  gitcmd=git_repo.git
+  # check if we already have a remote named 'push_origin', (with the magic token url we got)
+  if not hasattr(git.remotes, 'push_origin'):
+      gitcmd.remote('add', 'push_origin', git_push_url)
+  push_origin=gr.remotes.push_origin
+  # always push before pull
+  pull_res: git.remote.FetchInfo = origin.pull()
+  push_res: git.remote.PushInfo = push_origin.push()
+  return push_res
 
 def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]:
   """query prometheus using stock libraries"""
@@ -66,7 +77,7 @@ def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]
   assert len(data) == 1
   # expected query output is [{'metric': {}, 'value': [1729872285.678, '1']}]
   return data[0]['value'][0], float( data[0]['value'][1])
-  
+
 
 @click.command()
 @click.option( '--query', envvar='QUERY', required=True, help='query to gather metrics with' )
@@ -93,25 +104,15 @@ def cli(
   epoch_ts, value = prometheus_query( query, prometheus_url )
   logger.info( f'got data at ts {epoch_ts}: {value}' )
   report_file = PosixPath( git_dir, filepath )
-  update_log_file( report_file, epoch_ts, value, 'success' ) 
+  update_log_file( report_file, epoch_ts, value, 'success' )
   commit( git_repo, report_file )
 
   # push repo
   # Note that auth implementation will vary between types of remote and auth mechanism.
-  # Note also that Github PAT token can (and may actually have to be) incorporated into the URL itself,
-  # but we don't want to have to include it in the URL just for testing and pulling, etc
-  # in the URL 
+  # Note also that Github PAT token can (and may actually have to be) incorporated into
+  # the URL itself, but it's not permitted to include it in the URL just for pulling
   if git_push_url:
-    # we can just use the gitcmd (git_repo.git) directly for everything if we want, if it's easier,
-    # but we must do so for things that aren't wrapped 
-    gitcmd=git_repo.git
-    # check if we already have a remote named 'push_origin', (with the magic token url we got)
-    if not hasattr(git.remotes, 'push_origin'):
-        gitcmd.remote('add', 'push_origin', git_push_url)
-    push_origin=gr.remotes.push_origin
-    # always push before pull
-    push_origin.pull()
-    push_origin.push()
+    push(git_repo, git_push_url)
 
 if __name__ == '__main__':
   cli( auto_envvar_prefix='STATUS_PUSHER' )
