@@ -101,18 +101,23 @@ def cli(
   git_push_url: str) -> bool:
   """Queries a metrics source and updates a status file in git"""
   git_repo = git_clone( git_url, git_branch, git_dir )
+  logger.info(f'git_repo: {git_repo}')
+
   epoch_ts, value = prometheus_query( query, prometheus_url )
   logger.info( f'got data at ts {epoch_ts}: {value}' )
   report_file = PosixPath( git_dir, filepath )
   update_log_file( report_file, epoch_ts, value, 'success' )
-  commit( git_repo, report_file )
+
+  commit_res = commit( git_repo, report_file )
+  logger.info(f'commit result: {commit_res}')
 
   # push repo
   # Note that auth implementation will vary between types of remote and auth mechanism.
   # Note also that Github PAT token can (and may actually have to be) incorporated into
   # the URL itself, but it's not permitted to include it in the URL just for pulling
   if git_push_url:
-    push(git_repo, git_push_url)
+    push_res = push(git_repo, git_push_url)
+    logger.info(f'push result: {push_res}')
 
 if __name__ == '__main__':
   cli( auto_envvar_prefix='STATUS_PUSHER' )
