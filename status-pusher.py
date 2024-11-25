@@ -22,7 +22,10 @@ def git_clone( git_url: str, git_branch: str, git_dir, clear=False ) -> git.Repo
       logger.debug(f'removing existing git directory {git_dir}')
       shutil.rmtree( git_dir )
     else:
-      # TODO: validate real git repo
+      # Pull to be sure we're up to date
+      git_repo=git.Repo( git_dir )
+      origin=git_repo.remotes.origin
+      origin.pull()
       return git.Repo( git_dir )
 
   cloned_repo = git.Repo.clone_from( git_url, git_dir )
@@ -62,8 +65,9 @@ def push( git_repo: git.Repo, git_push_url ) -> git.remote.PushInfo:
   # check if we already have a remote named 'push_origin', (with the magic token url we got)
   if not hasattr(git.remotes, 'push_origin'):
       gitcmd.remote('add', 'push_origin', git_push_url)
+  origin=gr.remotes._origin
   push_origin=gr.remotes.push_origin
-  # always push before pull
+  # always pull before push
   pull_res: git.remote.FetchInfo = origin.pull()
   push_res: git.remote.PushInfo = push_origin.push()
   return push_res
