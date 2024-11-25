@@ -47,8 +47,6 @@ test-push: secrets
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
-	GIT_TOKEN='$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)' \
-	echo $(GIT_TOKEN) \
-	STATUS_PUSHER_GIT_PUSH_URL=https://$(GIT_TOKEN)@github.com/slaclab/s3df-status \
+	STATUS_PUSHER_GIT_PUSH_URL='https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status' \
     echo $(STATUS_PUSHER_GIT_PUSH_URL) \
 	# ./bin/python3 status-pusher.py
