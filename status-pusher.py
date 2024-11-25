@@ -32,6 +32,9 @@ def git_clone( git_url: str, git_branch: str, git_dir, clear=False ) -> git.Repo
       origin=git_repo.remotes.origin
       logger.debug(f'existing git repo has origin {origin}')
 
+      origin_urls=list(git_repo.remotes.origin.urls)
+      logger.debug(f'{origin} has urls {origin_urls}')
+
       logger.debug(f'pulling from origin {origin}')
       origin.pull()
       return git.Repo( git_dir )
@@ -73,15 +76,22 @@ def push( git_repo: git.Repo, git_push_url ) -> git.remote.PushInfo:
   # check if we already have a remote named 'push_origin', (with the magic token url we got)
   if not hasattr(git.remotes, 'push_origin'):
       gitcmd.remote('add', 'push_origin', git_push_url)
-  origin=gr.remotes._origin
-  push_origin=gr.remotes.push_origin
+  origin=git_repo.remotes.origin
+  push_origin=git_repo.remotes.push_origin
 
   # always pull before push
+  origin_urls=list(git_repo.remotes.origin.urls)
+  logger.debug(f'{origin} has urls {origin_urls}')
+
   logger.debug(f'pulling from origin {origin}')
   pull_res: git.remote.FetchInfo = origin.pull()
 
+  push_origin_urls=list(git_repo.remotes.origin.urls)
+  logger.debug(f'{push_origin} has urls {push_origin_urls}')
+
   logger.debug(f'pushing to push_origin <REDACTED URL CONTAINING TOKEN>')
   push_res: git.remote.PushInfo = push_origin.push()
+
   return push_res
 
 def prometheus_query( query: str, prometheus_url: str ) -> Tuple[ float, float ]:
