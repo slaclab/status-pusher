@@ -9,7 +9,7 @@ default: pytest test
 
 pytest:
 	echo "running pytest module"
-	./bin/python3 -m pytest ./test
+	./.venv/bin/python3 -m pytest ./test
 
 secrets:
 	mkdir -p ./.secrets
@@ -19,14 +19,15 @@ clean-secrets:
 	rm -rf $(SECRET_TEMPFILE)
 
 venv:
-	python3 -m venv .
+	mkdir -p .venv
+	python3 -m venv ./.venv
 
 pip:
-	./bin/pip3 install --upgrade pip
-	./bin/pip3 install -r requirements.txt
+	./.venv/bin/pip3 install --upgrade pip
+	./.venv/bin/pip3 install -r requirements.txt
 
 clean-all: clean-secrets
-	rm -rf bin include lib lib64 share
+	rm -rf .venv/
 
 build:
 	$(CONTAINER_RT) build -t $(REPO):$(TAG) .
@@ -44,7 +45,7 @@ test::
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
-	./bin/python3 status_pusher.py
+	./.venv/bin/python3 status_pusher.py
 
 test-push: secrets
 	echo "Running Live (read-write) test against real repo on github.com"
@@ -54,4 +55,4 @@ test-push: secrets
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
 	STATUS_PUSHER_GIT_PUSH_URL='https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status' \
-	./bin/python3 status_pusher.py
+	./.venv/bin/python3 status_pusher.py
