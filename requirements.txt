@@ -3,4 +3,6 @@ requests
 GitPython
 click
 loguru
+# dev reqs
 pytest
+black
