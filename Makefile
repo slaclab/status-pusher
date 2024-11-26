@@ -9,7 +9,7 @@ default: pytest test
 
 pytest:
 	echo "running pytest module"
-	./bin/python3 -m pytest ./test/test.py
+	./bin/python3 -m pytest ./test
 
 secrets:
 	mkdir -p ./.secrets
