@@ -36,6 +36,14 @@ def git_clone( git_url: str, git_branch: str, git_dir, clear=False ) -> git.Repo
       logger.debug(f'{origin} has urls {origin_urls}')
 
       logger.debug(f'pulling from origin {origin}')
+
+      # TODO handle branch that doesn't exist yet on remote 
+      # TODO we need to handle the case that an existing dir has a different branch checked out -
+      # ie, always do a checkout of the specified branch.
+      # TODO we should separate the pull/checkout logic from the git_clone function for clarity
+      # as git clone normally doesn't do either for an existing local repo
+      # We might even consider doing the git handling in shell in the Makefile for simplicity...
+      # unless we really may need this level of programmatic repo control in a module importing us.
       origin.pull()
 
       git_repo = git.Repo( git_dir )
@@ -43,12 +51,13 @@ def git_clone( git_url: str, git_branch: str, git_dir, clear=False ) -> git.Repo
       git_repo = git.Repo.clone_from( git_url, git_dir )
 
   # check out branch
-  gitcmd=git_repo.git
-  if not hasattr(git_repo.branches, git_branch):
-    gitcmd.checkout('-b', git_branch)
-  else:
-    gitcmd.checkout(git_branch)
-
+  # TODO handle branch that doesn't exist yet on remote 
+#  gitcmd=git_repo.git
+#  if not hasattr(git_repo.branches, git_branch):
+#    gitcmd.checkout('-b', git_branch)
+#  else:
+#    gitcmd.checkout(git_branch)
+#
   return git_repo
 
 def epoch_to_zulu( ts: float ) -> str:
@@ -65,6 +74,7 @@ def update_log_file( filepath: PosixPath, timestamp: float, value: float, state:
 
 def commit(
   git_repo: git.Repo,
+  git_branch: str,
   filepath: str,
   commit_message='[automated] update health report',
   ) -> git.objects.commit.Commit:
@@ -75,7 +85,7 @@ def commit(
   index.add( [filepath] )
   return index.commit( commit_message )
 
-def push( git_repo: git.Repo, git_push_url ) -> git.remote.PushInfo:
+def push( git_repo: git.Repo, git_branch: str, git_push_url ) -> git.remote.PushInfo:
   # we can just use the gitcmd (git_repo.git) directly for everything if we want, if it's easier,
   # but we must do so for things that aren't wrapped
   gitcmd=git_repo.git
@@ -83,6 +93,9 @@ def push( git_repo: git.Repo, git_push_url ) -> git.remote.PushInfo:
   if not hasattr(git_repo.remotes, 'push_origin'):
       gitcmd.remote('add', 'push_origin', git_push_url)
   origin=git_repo.remotes.origin
+
+  # TODO check out desired branch prior to pushing
+  # TODO set up remote tracking branch if it doesn't already exist
   push_origin=git_repo.remotes.push_origin
 
   # always pull before push
@@ -138,7 +151,7 @@ def cli(
   report_file = PosixPath( git_dir, filepath )
   update_log_file( report_file, epoch_ts, value, 'success' )
 
-  commit_res = commit( git_repo, report_file )
+  commit_res = commit( git_repo, git_branch, report_file )
   logger.info(f'commit result: {commit_res}')
 
   # push repo
@@ -146,7 +159,7 @@ def cli(
   # Note also that Github PAT token can (and may actually have to be) incorporated into
   # the URL itself, but it's not permitted to include it in the URL just for pulling
   if git_push_url:
-    push_res = push(git_repo, git_push_url)
+    push_res = push(git_repo, git_branch, git_push_url)
     logger.info(f'push result: {push_res}')
 
 if __name__ == '__main__':
