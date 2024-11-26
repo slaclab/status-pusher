@@ -5,7 +5,11 @@ REPO ?= slaclab/status-pusher
 TAG ?= latest
 #GIT_TOKEN ?= '<GIT_TOKEN NOT PROVIDED>'
 
-default: test
+default: pytest test
+
+pytest:
+	echo "running pytest module"
+	./bin/python3 -m pytest ./test/test.py
 
 secrets:
 	mkdir -p ./.secrets
@@ -34,18 +38,20 @@ push:
 # live tests against github repo
 ################################
 test::
+	echo "Running Live (read-only) test against real repo on github.com"
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
 	STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
-	./bin/python3 status-pusher.py
+	./bin/python3 status_pusher.py
 
 test-push: secrets
+	echo "Running Live (read-write) test against real repo on github.com"
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
 	STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
 	STATUS_PUSHER_GIT_PUSH_URL='https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status' \
-	./bin/python3 status-pusher.py
+	./bin/python3 status_pusher.py
