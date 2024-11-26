@@ -37,13 +37,19 @@ def git_clone( git_url: str, git_branch: str, git_dir, clear=False ) -> git.Repo
 
       logger.debug(f'pulling from origin {origin}')
       origin.pull()
-      return git.Repo( git_dir )
 
-  cloned_repo = git.Repo.clone_from( git_url, git_dir )
+      git_repo = git.Repo( git_dir )
+  else:
+      git_repo = git.Repo.clone_from( git_url, git_dir )
 
-  # TODO: check out branch
+  # check out branch
+  gitcmd=git_repo.git
+  if not hasattr(git_repo.branches, git_branch):
+    gitcmd.checkout('-b', git_branch)
+  else:
+    gitcmd.checkout(git_branch)
 
-  return cloned_repo
+  return git_repo
 
 def epoch_to_zulu( ts: float ) -> str:
   dt = datetime.datetime.fromtimestamp(ts, datetime.timezone.utc)
