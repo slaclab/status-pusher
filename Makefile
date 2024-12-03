@@ -26,6 +26,11 @@ pip:
 	./.venv/bin/pip3 install --upgrade pip
 	./.venv/bin/pip3 install -r requirements.txt
 
+black:
+	# discuss before applying to status_pusher.py
+	# ./.venv/bin/black ./
+	./.venv/bin/black ./test/
+
 clean-all: clean-secrets
 	rm -rf .venv/
 
