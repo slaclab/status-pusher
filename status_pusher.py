@@ -80,6 +80,7 @@ def commit(
   ) -> git.objects.commit.Commit:
 
   """commit and push changes to git"""
+  # TODO check out desired branch prior to committing
   logger.debug(f'committing updates to {filepath}')
   index = git_repo.index
   index.add( [filepath] )
