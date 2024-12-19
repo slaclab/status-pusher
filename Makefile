@@ -40,6 +40,9 @@ clean-all: clean-secrets
 build:
 	$(CONTAINER_RT) build -t $(REPO):$(TAG) .
 
+build_and_run_interactive: build
+	$(CONTAINER_RT) run -it localhost/$(REPO):$(TAG) bash
+
 push:
 	@printf "\n################################################################################"
 	@printf "\nImages are built and published automatically upon pushing the 'release' branch".
