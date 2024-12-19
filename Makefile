@@ -41,7 +41,13 @@ build:
 	$(CONTAINER_RT) build -t $(REPO):$(TAG) .
 
 push:
-	$(CONTAINER_RT) push $(REPO):$(TAG)
+	@printf "\n################################################################################"
+	@printf "\nImages are built and published automatically upon pushing the 'release' branch".
+	@printf "\n\nView them at:"
+	@printf "\nhttps://github.com/slaclab/status-pusher/pkgs/container/status-pusher"
+	@printf "\n\nPull them from:"
+	@printf "\ndocker://ghcr.io/ghcr.io/slaclab/status-pusher"
+	@printf "\n################################################################################\n\n"
 
 ################################
 # live tests against github repo
