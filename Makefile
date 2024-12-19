@@ -33,6 +33,9 @@ black:
 
 clean-all: clean-secrets
 	rm -rf .venv/
+	rm -rf __pycache__
+	rm pyvenv.cfg
+	rm pip-selfcheck.json
 
 build:
 	$(CONTAINER_RT) build -t $(REPO):$(TAG) .
