@@ -52,6 +52,14 @@ push:
 	@printf "\ndocker://ghcr.io/ghcr.io/slaclab/status-pusher"
 	@printf "\n################################################################################\n\n"
 
+docker_login:
+	$(CONTAINER_RT) login docker.com
+
+push_dockerhub: docker_login
+	echo "Note: this should be run with sudo on iana after logging into docker.com\
+	using creds at /secret/dockerhub/slaclab/credentials"
+	$(CONTAINER_RT) push $(REPO):$(TAG) docker://docker.com/$(REPO):$(TAG)
+
 ################################
 # live tests against github repo
 ################################
