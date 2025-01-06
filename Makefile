@@ -55,7 +55,7 @@ push:
 docker_login:
 	$(CONTAINER_RT) login docker.com
 
-push_dockerhub: docker_login
+push_dockerhub: docker_login build
 	echo "Note: this should be run with sudo on iana after logging into docker.com\
 	using creds at /secret/dockerhub/slaclab/credentials"
 	$(CONTAINER_RT) push $(REPO):$(TAG) docker://docker.com/$(REPO):$(TAG)
