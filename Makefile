@@ -4,6 +4,7 @@ CONTAINER_RT ?= podman
 REPO ?= slaclab/status-pusher
 TAG ?= latest
 #GIT_TOKEN ?= '<GIT_TOKEN NOT PROVIDED>'
+CONTAINER_REGISTRY ?= docker.io
 
 default: pytest test
 
@@ -38,7 +39,7 @@ clean-all: clean-secrets
 	rm pip-selfcheck.json
 
 build:
-	$(CONTAINER_RT) build -t $(REPO):$(TAG) .
+	$(CONTAINER_RT) build -t $(CONTAINER_REGISTRY)/$(REPO):$(TAG) .
 
 build_and_run_interactive: build
 	$(CONTAINER_RT) run -it localhost/$(REPO):$(TAG) bash
@@ -52,13 +53,13 @@ push:
 	@printf "\ndocker://ghcr.io/ghcr.io/slaclab/status-pusher"
 	@printf "\n################################################################################\n\n"
 
-docker_login:
-	$(CONTAINER_RT) login docker.com
+registry_login:
+	$(CONTAINER_RT) login $(CONTAINER_REGISTRY)/$(REPO)
 
-push_dockerhub: docker_login build
+push: build
 	echo "Note: this should be run with sudo on iana after logging into docker.com\
 	using creds at /secret/dockerhub/slaclab/credentials"
-	$(CONTAINER_RT) push $(REPO):$(TAG) docker://docker.com/$(REPO):$(TAG)
+	$(CONTAINER_RT) push $(CONTAINER_REGISTRY)/$(REPO):$(TAG)
 
 ################################
 # live tests against github repo
