@@ -3,6 +3,7 @@ requests
 GitPython
 click
 loguru
+influxdb-client
 # dev reqs
 pytest
 black
