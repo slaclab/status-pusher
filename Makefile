@@ -29,7 +29,7 @@ pip:
 
 black:
 	# discuss before applying to status_pusher.py
-	# ./.venv/bin/black ./
+	./.venv/bin/black ./
 	./.venv/bin/black ./test/
 
 clean-all: clean-secrets
@@ -53,13 +53,13 @@ push:
 	@printf "\ndocker://ghcr.io/ghcr.io/slaclab/status-pusher"
 	@printf "\n################################################################################\n\n"
 
-registry_login:
-	$(CONTAINER_RT) login $(CONTAINER_REGISTRY)/$(REPO)
-
-push: build
-	echo "Note: this should be run with sudo on iana after logging into docker.com\
-	using creds at /secret/dockerhub/slaclab/credentials"
-	$(CONTAINER_RT) push $(CONTAINER_REGISTRY)/$(REPO):$(TAG)
+#registry_login:
+#	$(CONTAINER_RT) login $(CONTAINER_REGISTRY)/$(REPO)
+#
+#push: build
+#	echo "Note: this should be run with sudo on iana after logging into docker.com\
+#	using creds at /secret/dockerhub/slaclab/credentials"
+#	$(CONTAINER_RT) push $(CONTAINER_REGISTRY)/$(REPO):$(TAG)
 
 ################################
 # live tests against github repo
