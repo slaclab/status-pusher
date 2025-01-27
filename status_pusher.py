@@ -217,8 +217,6 @@ def cli(ctx,
     git_push_url: str,
 ) -> bool:
     """Queries a metrics source and updates a status file in git"""
-    # shared context object for subcommands to pass vals back
-    ctx.obj = StatusRecord()
 
     git_repo = git_clone(git_url, git_branch, git_dir)
     logger.info(f"git_repo: {git_repo}")
@@ -281,4 +279,6 @@ def influxq(ctx):
     pass
 
 if __name__ == "__main__":
-    cli(auto_envvar_prefix="STATUS_PUSHER")
+    # shared context object for subcommands to pass vals back
+    status_record = StatusRecord()
+    cli(obj=status_record, auto_envvar_prefix="STATUS_PUSHER")
