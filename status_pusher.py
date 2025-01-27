@@ -1,17 +1,33 @@
 #!/usr/bin/env python3
 
+from dataclasses import dataclass
+import datetime
+import click
+import git
+from loguru import logger
+from pathlib import PosixPath
+from prometheus_api_client import PrometheusConnect
+import os
+import shutil
+import tempfile
 import time
 import timeit
-import tempfile
-import os
-import datetime
-from loguru import logger
-from prometheus_api_client import PrometheusConnect
-import git
-import click
-import shutil
-from pathlib import PosixPath
-from typing import Tuple
+from typing import Tuple, Optional
+
+@dataclass
+class StatusRecord:
+    """
+    Status record values.
+
+    Note Fettle maps status string vals to Operational Status
+    https://github.com/slaclab/s3df-status/blob/main/src/services/hooks/useSystemStatus.tsx#L30
+      "success" -> Status.OPERATIONAL
+      "failure" -> Status.OUTAGE
+      All other values map to Status.UNKNOWN
+    """
+    value: Optional[float] = None
+    epoch_ts: datetime.datetime = datetime.datetime.now().astimezone().timestamp()
+    status: str = "UNKNOWN"
 
 
 def git_clone(git_url: str, git_branch: str, git_dir, clear=False) -> git.Repo:
@@ -102,6 +118,7 @@ def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushIn
 
     # TODO check out desired branch prior to pushing
     # TODO set up remote tracking branch if it doesn't already exist
+    # TODO retry if fails eg due to race condition push interleaved from another checker instance
     push_origin = git_repo.remotes.push_origin
 
     # always pull before push
@@ -120,7 +137,6 @@ def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushIn
     return push_res
 
 
-@click.command()
 def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     """query prometheus using stock libraries"""
     logger.debug(f'querying {prometheus_url} with "{query}"')
@@ -131,12 +147,9 @@ def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     # expected query output is [{'metric': {}, 'value': [1729872285.678, '1']}]
     return data[0]["value"][0], float(data[0]["value"][1])
 
-
-@click.command()
 def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
-    """query influxdb"""
+    """query influx using stock libraries"""
     pass
-
 
 @click.group()
 @click.option(
@@ -189,9 +202,10 @@ def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     envvar="GIT_PUSH_URL",
     default=None,
     show_default=True,
-    help="URL to push to remote after commiting results. If not provided, updates will still be committed locally, but they will not be pushed to the remot.",
+    help="URL to push to remote after commiting results. If not provided, updates will still be committed locally, but they will not be pushed to the remote.",
 )
-def cli(
+@click.pass_context
+def cli(ctx,
     query: str,
     prometheus_url: str,
     git_url: str,
@@ -202,25 +216,60 @@ def cli(
     git_push_url: str,
 ) -> bool:
     """Queries a metrics source and updates a status file in git"""
+    # shared context object for subcommands to pass vals back
+    ctx.obj = StatusRecord()
+
     git_repo = git_clone(git_url, git_branch, git_dir)
     logger.info(f"git_repo: {git_repo}")
 
-    epoch_ts, value = prometheus_query(query, prometheus_url)
-    logger.info(f"got data at ts {epoch_ts}: {value}")
-    report_file = PosixPath(git_dir, filepath)
-    update_log_file(report_file, epoch_ts, value, "success")
+    @ctx.call_on_close
+    def git_commit_and_push():
+        logger.info(f"writing report file at {filepath}")
+        logger.info(f"Data record:\n{ctx.obj.epoch_ts}: {ctx.obj.value}")
 
-    commit_res = commit(git_repo, git_branch, report_file)
-    logger.info(f"commit result: {commit_res}")
+        report_file = PosixPath(git_dir, filepath)
+        update_log_file(report_file, ctx.obj.epoch_ts, ctx.obj.value, ctx.obj.status)
 
-    # push repo
-    # Note that auth implementation will vary between types of remote and auth mechanism.
-    # Note also that Github PAT token can (and may actually have to be) incorporated into
-    # the URL itself, but it's not permitted to include it in the URL just for pulling
-    if git_push_url:
-        push_res = push(git_repo, git_branch, git_push_url)
-        logger.info(f"push result: {push_res}")
+        logger.info(f"updated log file: {report_file}")
 
+        commit_res = commit(git_repo, git_branch, report_file)
+        logger.info(f"commit result: {commit_res}")
+
+        # push repo
+        # Note that auth implementation will vary between types of remote and auth mechanism.
+        # Note also that Github PAT token can (and may actually have to be) incorporated into
+        # the URL itself, but it's not permitted to include it in the URL just for pulling
+        if git_push_url:
+            push_res = push(git_repo, git_branch, git_push_url)
+            logger.info(f"push result: {push_res}")
+
+@cli.command()
+@click.pass_context
+def promq(ctx):
+    """
+    Prometheus_query command wrapped to do pre and post git actions.
+    Performs checkout, pull, prometheus_query, commit, push.
+    """
+    
+    logger.debug(f"promq_command called with {ctx.params}")
+
+    prom_query = ctx.params['query']
+    prom_url = ctx.params['prometheus_url']
+
+    logger.debug(f'calling prometheus_query({"prom_query"}, {"prom_url"})')
+    epoch_ts, value = prometheus_query(prom_query, prom_url)
+    logger.info(f"got data at ts {ctx.obj.epoch_ts}: {ctx.obj.value}")
+
+    ctx.obj(epoch_ts=epoch_ts, value=value, status="success")
+
+
+@click.command()
+def influxq(ctx):
+    """
+    InfluxDB command wrapped to do pre and post git actions.
+    Performs checkout, pull, prometheus_query, commit, push.
+    """
+    pass
 
 if __name__ == "__main__":
     cli(auto_envvar_prefix="STATUS_PUSHER")

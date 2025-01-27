@@ -71,7 +71,7 @@ test::
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
-	./.venv/bin/python3 status_pusher.py
+	./.venv/bin/python3 status_pusher.py promq
 
 test-push: secrets
 	echo "Running Live (read-write) test against real repo on github.com"
