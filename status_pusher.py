@@ -6,6 +6,7 @@ import click
 import git
 from loguru import logger
 from pathlib import PosixPath
+from pprint import pprint
 from prometheus_api_client import PrometheusConnect
 import os
 import shutil
@@ -250,7 +251,13 @@ def promq(ctx):
     Prometheus_query command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
     """
-    
+    ######################################
+    # DEBUG
+    # Why don't we get ctx.params populated here?
+    pprint(ctx)
+    breakpoint()
+    #####################################
+
     logger.debug(f"promq_command called with {ctx.params}")
 
     prom_query = ctx.params['query']
