@@ -254,6 +254,8 @@ def promq(ctx):
     ######################################
     # DEBUG
     # Why don't we get ctx.params populated here?
+    # simple example of command group passing context:
+    # https://click.palletsprojects.com/en/stable/commands/
     pprint(ctx)
     breakpoint()
     #####################################
