@@ -222,9 +222,15 @@ def cli(
     git_push_url: str,
 ) -> bool:
     """Queries a metrics source and updates a status file in git"""
+    
+    # ensure we got a StatusRecord object in case we were invoked outside __main__
+    ctx.ensure_object(StatusRecord)
 
     git_repo = git_clone(git_url, git_branch, git_dir)
     logger.info(f"git_repo: {git_repo}")
+
+    # queries specified by subcommand now are executed, populating ctx.obj:StatusRecord
+    # and finally the call_on_close handler below does the commit and push
 
     @ctx.call_on_close
     def git_commit_and_push():
@@ -264,6 +270,7 @@ def promq(ctx):
     epoch_ts, value = prometheus_query(prom_query, prom_url)
     logger.info(f"got data at ts {ctx.obj.epoch_ts}: {ctx.obj.value}")
 
+    # populate context object for cli handler to access
     ctx.obj.epoch_ts = epoch_ts
     ctx.obj.value = value
     ctx.obj.status = "success"
