@@ -81,4 +81,4 @@ test-push: secrets
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
 	STATUS_PUSHER_GIT_PUSH_URL='https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status' \
-	./.venv/bin/python3 status_pusher.py
+	./.venv/bin/python3 status_pusher.py promq
