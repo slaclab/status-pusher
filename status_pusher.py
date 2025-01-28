@@ -6,7 +6,7 @@ import click
 import git
 from loguru import logger
 from pathlib import PosixPath
-from pprint import pprint
+import pprint
 from prometheus_api_client import PrometheusConnect
 import os
 import shutil
@@ -223,8 +223,8 @@ def cli(ctx,
 
     @ctx.call_on_close
     def git_commit_and_push():
-        logger.info(f"writing report file at {filepath}")
-        logger.info(f"Data record:\n{ctx.obj.epoch_ts}: {ctx.obj.value}")
+        logger.debug(f"writing report file at {filepath}")
+        logger.debug(f"Data record:\n{pprint.pformat(ctx.obj)}")
 
         report_file = PosixPath(git_dir, filepath)
         update_log_file(report_file, ctx.obj.epoch_ts, ctx.obj.value, ctx.obj.status)
