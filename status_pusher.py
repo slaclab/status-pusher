@@ -249,25 +249,18 @@ def promq(ctx):
     Prometheus_query command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
     """
-    ######################################
-    # DEBUG
-    # Why don't we get ctx.params populated here?
-    # simple example of command group passing context:
-    # https://click.palletsprojects.com/en/stable/commands/
-    pprint(ctx)
-    breakpoint()
-    #####################################
-
     logger.debug(f"promq_command called with {ctx.params}")
 
-    prom_query = ctx.params['query']
-    prom_url = ctx.params['prometheus_url']
+    prom_query = ctx.parent.params['query']
+    prom_url = ctx.parent.params['prometheus_url']
 
     logger.debug(f'calling prometheus_query({"prom_query"}, {"prom_url"})')
     epoch_ts, value = prometheus_query(prom_query, prom_url)
     logger.info(f"got data at ts {ctx.obj.epoch_ts}: {ctx.obj.value}")
 
-    ctx.obj(epoch_ts=epoch_ts, value=value, status="success")
+    ctx.obj.epoch_ts=epoch_ts
+    ctx.obj.value=value
+    ctx.obj.status="success"
 
 
 @click.command()
