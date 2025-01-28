@@ -222,7 +222,7 @@ def cli(
     git_push_url: str,
 ) -> bool:
     """Queries a metrics source and updates a status file in git"""
-    
+
     # ensure we got a StatusRecord object in case we were invoked outside __main__
     ctx.ensure_object(StatusRecord)
 
