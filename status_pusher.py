@@ -15,6 +15,7 @@ import time
 import timeit
 from typing import Tuple, Optional
 
+
 @dataclass
 class StatusRecord:
     """
@@ -26,6 +27,7 @@ class StatusRecord:
       "failure" -> Status.OUTAGE
       All other values map to Status.UNKNOWN
     """
+
     value: Optional[float] = None
     epoch_ts: datetime.datetime = datetime.datetime.now().astimezone().timestamp()
     status: str = "UNKNOWN"
@@ -148,9 +150,11 @@ def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     # expected query output is [{'metric': {}, 'value': [1729872285.678, '1']}]
     return data[0]["value"][0], float(data[0]["value"][1])
 
+
 def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     """query influx using stock libraries"""
     pass
+
 
 @click.group()
 @click.option(
@@ -206,7 +210,8 @@ def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     help="URL to push to remote after commiting results. If not provided, updates will still be committed locally, but they will not be pushed to the remote.",
 )
 @click.pass_context
-def cli(ctx,
+def cli(
+    ctx,
     query: str,
     prometheus_url: str,
     git_url: str,
@@ -242,6 +247,7 @@ def cli(ctx,
             push_res = push(git_repo, git_branch, git_push_url)
             logger.info(f"push result: {push_res}")
 
+
 @cli.command()
 @click.pass_context
 def promq(ctx):
@@ -251,16 +257,16 @@ def promq(ctx):
     """
     logger.debug(f"promq_command called with {ctx.params}")
 
-    prom_query = ctx.parent.params['query']
-    prom_url = ctx.parent.params['prometheus_url']
+    prom_query = ctx.parent.params["query"]
+    prom_url = ctx.parent.params["prometheus_url"]
 
     logger.debug(f'calling prometheus_query({"prom_query"}, {"prom_url"})')
     epoch_ts, value = prometheus_query(prom_query, prom_url)
     logger.info(f"got data at ts {ctx.obj.epoch_ts}: {ctx.obj.value}")
 
-    ctx.obj.epoch_ts=epoch_ts
-    ctx.obj.value=value
-    ctx.obj.status="success"
+    ctx.obj.epoch_ts = epoch_ts
+    ctx.obj.value = value
+    ctx.obj.status = "success"
 
 
 @click.command()
@@ -270,6 +276,7 @@ def influxq(ctx):
     Performs checkout, pull, prometheus_query, commit, push.
     """
     pass
+
 
 if __name__ == "__main__":
     # shared context object for subcommands to pass vals back
