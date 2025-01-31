@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import datetime
 import click
 import git
+from influxdb_client import InfluxDBClient
 from loguru import logger
 from pathlib import PosixPath
 import pprint
@@ -276,7 +277,22 @@ def promq(ctx):
     ctx.obj.status = "success"
 
 
-@click.command()
+@click.option(
+    "--influxdb-url",
+    envvar="INFLUXDB_URL",
+    default="http://influxdb:8086/",
+    show_default=True,
+    help="url for influxdb endpoint",
+)
+@click.option(
+    "--influxdb_database_name",
+    envvar="INFLUXDB_DATABASE_NAME",
+    default="mydb",
+    show_default=True,
+    help="database name to target with InfluxDB query",
+)
+@cli.command()
+@click.pass_context
 def influxq(ctx):
     """
     InfluxDB command wrapped to do pre and post git actions.
