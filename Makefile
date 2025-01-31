@@ -67,7 +67,7 @@ push:
 test::
 	echo "Running Live (read-only) test against real repo on github.com"
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
-	STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' \
+	STATUS_PUSHER_PROMQ_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
@@ -76,7 +76,7 @@ test::
 test-push: secrets
 	echo "Running Live (read-write) test against real repo on github.com"
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
-	STATUS_PUSHER_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' \
+	STATUS_PUSHER_PROMQ_PROMETHEUS_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \

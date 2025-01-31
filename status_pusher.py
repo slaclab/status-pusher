@@ -250,7 +250,7 @@ def cli(
 # TODO why doesn't the subcommand pick up the STATUS_PUSHER env prefix from the `cli` group?
 @click.option(
     "--prometheus-url",
-    envvar="STATUS_PUSHER_PROMETHEUS_URL",
+    envvar="PROMETHEUS_URL",
     default="http://prometheus:8086/",
     show_default=True,
     help="url for prometheus endpoint",
