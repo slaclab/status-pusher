@@ -151,7 +151,10 @@ def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     # expect that only a single value is returned from the query
     assert len(data) == 1
     # expected query output is [{'metric': {}, 'value': [1729872285.678, '1']}]
-    return data[0]["value"][0], float(data[0]["value"][1])
+
+    (metric, value) = (data[0]["value"][0], float(data[0]["value"][1]))
+
+    return (metric, value)
 
 
 def influx_query(db_name: str, query: str, influx_url: str) -> Tuple[float, float]:
@@ -167,13 +170,16 @@ def influx_query(db_name: str, query: str, influx_url: str) -> Tuple[float, floa
 
     logger.debug(f'querying {influx_url} with db_name: "{db_name}", query: "{query}"')
     response = requests.get(influx_url, params=url_params)
-    data = response.json()
 
+    data = response.json()
     # TODO
     # expect something
     # assert something
 
-    return data
+    # TODO
+    (metric, value) = (None, None)
+
+    return (metric, value)
 
 
 @click.group()
@@ -271,18 +277,22 @@ def promq(ctx, url: str):
     Prometheus_query command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
     """
-    logger.debug(f"promq_command called with {ctx.params}")
+    logger.debug(
+        f"promq command called with parent params {ctx.parent.params} and command params {ctx.params}"
+    )
 
     prom_url = ctx.params["url"]
     prom_query = ctx.parent.params["query"]
 
     logger.debug(f'calling prometheus_query({"prom_query"}, {"prom_url"})')
     epoch_ts, value = prometheus_query(prom_query, prom_url)
-    logger.info(f"got data at ts {ctx.obj.epoch_ts}: {ctx.obj.value}")
+    logger.info(f"got data at ts {epoch_ts}: {value}")
 
     # populate context object for cli handler to access
     ctx.obj.epoch_ts = epoch_ts
     ctx.obj.value = value
+
+    # TODO handle success/failure criteria as part of query or... ?
     ctx.obj.status = "success"
 
 
@@ -305,7 +315,23 @@ def influxq(ctx, url, db_name):
     InfluxDB command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
     """
-    pass
+    logger.debug(
+        f"influxq command called with parent cli params {ctx.parent.params} and command params {ctx.params}"
+    )
+
+    influxdb_url = ctx.params["url"]
+    influxdb_query = ctx.parent.params["query"]
+
+    logger.debug(f'calling influxdb_query({"influxdb_query"}, {"influxdb_url"})')
+    epoch_ts, value = influxdb_query(prom_query, prom_url)
+    logger.info(f"got data at ts {ctx.obj.epoch_ts}: {ctx.obj.value}")
+
+    # populate context object for cli handler to access
+    ctx.obj.epoch_ts = epoch_ts
+    ctx.obj.value = value
+
+    # TODO handle success/failure criteria as part of query or... ?
+    ctx.obj.status = "success"
 
 
 if __name__ == "__main__":
