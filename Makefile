@@ -1,10 +1,10 @@
 SECRET_PATH ?= 'secret/scs/github/pat'
 SECRET_TEMPFILE ?= ./.secrets
-CONTAINER_RT ?= podman
+CONTAINER_RT ?= sudo podman
 REPO ?= slaclab/status-pusher
 TAG ?= latest
 #GIT_TOKEN ?= '<GIT_TOKEN NOT PROVIDED>'
-CONTAINER_REGISTRY ?= docker.io
+CONTAINER_REGISTRY ?= localhost
 
 default: pytest test
 
@@ -42,7 +42,7 @@ build:
 	$(CONTAINER_RT) build -t $(CONTAINER_REGISTRY)/$(REPO):$(TAG) .
 
 build_and_run_interactive: build
-	$(CONTAINER_RT) run -it localhost/$(REPO):$(TAG) bash
+	$(CONTAINER_RT) run -it $(CONTAINER_REGISTRY)/$(REPO):$(TAG) bash
 
 push:
 	@printf "\n################################################################################"
