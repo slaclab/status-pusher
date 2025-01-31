@@ -66,8 +66,14 @@ def test_prometheus_query():
     # mock prometheus api call
 
 
+def test_influxdb_query():
+    """
+    Test influxdb function
+    """
+    # mock influxdb api call
+
 def test_cli():
     """
     Test cli function
     """
-    # mock git push, prometheus api call
+    # mock git pull, push, prometheus api or influxdb call
