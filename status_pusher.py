@@ -177,9 +177,7 @@ def influx_query(db_name: str, query: str, influx_url: str) -> Tuple[float, floa
 
 
 @click.group()
-@click.option(
-    "--query", envvar="QUERY", required=True, help="query to gather metrics with"
-)
+@click.option("--query", required=True, help="query to gather metrics with")
 @click.option(
     "--filepath",
     required=True,
@@ -195,7 +193,7 @@ def influx_query(db_name: str, query: str, influx_url: str) -> Tuple[float, floa
     "--git-branch",
     default="main",
     show_default=True,
-    help="git branch to use",
+    help="NOT IMPLEMENTED! `main` git branch will be used.",
 )
 @click.option(
     "--git-dir",
@@ -295,14 +293,14 @@ def promq(ctx, url: str):
     help="url for influxdb endpoint",
 )
 @click.option(
-    "--db_name",
+    "--db-name",
     default="mydb",
     show_default=True,
     help="database name to target with InfluxDB query",
 )
 @cli.command()
 @click.pass_context
-def influxq(ctx):
+def influxq(ctx, url, db_name):
     """
     InfluxDB command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
