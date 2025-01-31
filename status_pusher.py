@@ -11,6 +11,7 @@ from pathlib import PosixPath
 import pprint
 from prometheus_api_client import PrometheusConnect
 import os
+import requests
 import shutil
 import tempfile
 import time
@@ -153,9 +154,26 @@ def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     return data[0]["value"][0], float(data[0]["value"][1])
 
 
-def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
-    """query influx using stock libraries"""
-    pass
+def influx_query(db_name: str, query: str, influx_url: str) -> Tuple[float, float]:
+    """query influx using http api"""
+    path = "/query"
+    url = influx_url + path
+
+    # TODO Determine if we can know all potentially required url params in advance?
+    # If not, we could either provide arbitrary cli params to be passed in, or simply
+    # permit the user to build the complete query url with params themselves.
+
+    url_params = {"db": db_name, "q": query}
+
+    logger.debug(f'querying {influx_url} with db_name: "{db_name}", query: "{query}"')
+    response = requests.get(influx_url, params=url_params)
+    data = response.json()
+
+    # TODO
+    # expect something
+    # assert something
+
+    return data
 
 
 @click.group()
