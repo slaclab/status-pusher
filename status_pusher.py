@@ -247,24 +247,22 @@ def cli(
             logger.info(f"push result: {push_res}")
 
 
-# TODO why doesn't the subcommand pick up the STATUS_PUSHER env prefix from the `cli` group?
 @click.option(
-    "--prometheus-url",
-    envvar="PROMETHEUS_URL",
+    "--url",
     default="http://prometheus:8086/",
     show_default=True,
     help="url for prometheus endpoint",
 )
 @cli.command()
 @click.pass_context
-def promq(ctx, prometheus_url: str):
+def promq(ctx, url: str):
     """
     Prometheus_query command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
     """
     logger.debug(f"promq_command called with {ctx.params}")
 
-    prom_url = ctx.params["prometheus_url"]
+    prom_url = ctx.params["url"]
     prom_query = ctx.parent.params["query"]
 
     logger.debug(f'calling prometheus_query({"prom_query"}, {"prom_url"})')
@@ -278,14 +276,13 @@ def promq(ctx, prometheus_url: str):
 
 
 @click.option(
-    "--influxdb-url",
-    envvar="STATUS_PUSHER_INFLUXDB_URL",
+    "--url",
     default="http://influxdb:8086/",
     show_default=True,
     help="url for influxdb endpoint",
 )
 @click.option(
-    "--influxdb_database_name",
+    "--database_name",
     envvar="STATUS_PUSHER_INFLUXDB_DATABASE_NAME",
     default="mydb",
     show_default=True,
