@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import datetime
 import click
 import git
-from influxdb_client import InfluxDBClient
+
+# from influxdb_client import InfluxDBClient
 from loguru import logger
 from pathlib import PosixPath
 import pprint
@@ -276,7 +277,7 @@ def promq(ctx, url: str):
     help="url for influxdb endpoint",
 )
 @click.option(
-    "--database_name",
+    "--db_name",
     default="mydb",
     show_default=True,
     help="database name to target with InfluxDB query",

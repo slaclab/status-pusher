@@ -3,8 +3,10 @@ requests
 GitPython
 click
 loguru
-influxdb_client
-# dev reqs
+# influxdb_client
+#################
+# dev reqs follow
+#################
 pytest
 black
 ipython

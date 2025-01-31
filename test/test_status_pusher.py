@@ -72,6 +72,7 @@ def test_influxdb_query():
     """
     # mock influxdb api call
 
+
 def test_cli():
     """
     Test cli function
