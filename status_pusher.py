@@ -36,7 +36,7 @@ class StatusRecord:
     status: str = "UNKNOWN"
 
 
-def git_clone(git_url: str, git_branch: str, git_dir, clear=False) -> git.Repo:
+def git_clone(git_url: str, git_branch: str, git_dir, clear=False, depth=1) -> git.Repo:
     """create the local git clone"""
     logger.debug(f"git_clone checking for existing directory")
     if os.path.isdir(git_dir):
@@ -57,7 +57,7 @@ def git_clone(git_url: str, git_branch: str, git_dir, clear=False) -> git.Repo:
             origin_urls = list(git_repo.remotes.origin.urls)
             logger.debug(f"{origin} has urls {origin_urls}")
 
-            logger.debug(f"pulling from origin {origin}")
+            logger.debug(f"pulling from origin {origin} with depth {depth}")
 
             # TODO handle branch that doesn't exist yet on remote
             # TODO we need to handle the case that an existing dir has a different branch checked out -
@@ -66,7 +66,7 @@ def git_clone(git_url: str, git_branch: str, git_dir, clear=False) -> git.Repo:
             # as git clone normally doesn't do either for an existing local repo
             # We might even consider doing the git handling in shell in the Makefile for simplicity...
             # unless we really may need this level of programmatic repo control in a module importing us.
-            origin.pull()
+            origin.pull(depth=depth)
 
             git_repo = git.Repo(git_dir)
     else:
