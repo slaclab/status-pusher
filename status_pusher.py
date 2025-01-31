@@ -168,13 +168,6 @@ def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     help="filepath to append measurements to relative to root of git repo directory",
 )
 @click.option(
-    "--prometheus-url",
-    envvar="PROMETHEUS_URL",
-    default="http://prometheus:8086/",
-    show_default=True,
-    help="url for prometheus endpoint",
-)
-@click.option(
     "--git-url",
     envvar="GIT_URL",
     default="http://github.com/org/repo/",
@@ -214,7 +207,6 @@ def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
 def cli(
     ctx,
     query: str,
-    prometheus_url: str,
     git_url: str,
     git_branch: str,
     git_dir: str,
@@ -255,17 +247,25 @@ def cli(
             logger.info(f"push result: {push_res}")
 
 
+# TODO why doesn't the subcommand pick up the STATUS_PUSHER env prefix from the `cli` group?
+@click.option(
+    "--prometheus-url",
+    envvar="STATUS_PUSHER_PROMETHEUS_URL",
+    default="http://prometheus:8086/",
+    show_default=True,
+    help="url for prometheus endpoint",
+)
 @cli.command()
 @click.pass_context
-def promq(ctx):
+def promq(ctx, prometheus_url: str):
     """
     Prometheus_query command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
     """
     logger.debug(f"promq_command called with {ctx.params}")
 
+    prom_url = ctx.params["prometheus_url"]
     prom_query = ctx.parent.params["query"]
-    prom_url = ctx.parent.params["prometheus_url"]
 
     logger.debug(f'calling prometheus_query({"prom_query"}, {"prom_url"})')
     epoch_ts, value = prometheus_query(prom_query, prom_url)
@@ -279,14 +279,14 @@ def promq(ctx):
 
 @click.option(
     "--influxdb-url",
-    envvar="INFLUXDB_URL",
+    envvar="STATUS_PUSHER_INFLUXDB_URL",
     default="http://influxdb:8086/",
     show_default=True,
     help="url for influxdb endpoint",
 )
 @click.option(
     "--influxdb_database_name",
-    envvar="INFLUXDB_DATABASE_NAME",
+    envvar="STATUS_PUSHER_INFLUXDB_DATABASE_NAME",
     default="mydb",
     show_default=True,
     help="database name to target with InfluxDB query",
