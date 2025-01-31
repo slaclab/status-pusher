@@ -163,34 +163,29 @@ def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
 )
 @click.option(
     "--filepath",
-    envvar="FILEPATH",
     required=True,
     help="filepath to append measurements to relative to root of git repo directory",
 )
 @click.option(
     "--git-url",
-    envvar="GIT_URL",
     default="http://github.com/org/repo/",
     show_default=True,
     help="git repo for status files",
 )
 @click.option(
     "--git-branch",
-    envvar="GIT_BRANCH",
     default="main",
     show_default=True,
     help="git branch to use",
 )
 @click.option(
     "--git-dir",
-    envvar="GIT_DIR",
     default="/tmp/repo",
     show_default=True,
     help="local path for git cloned repo",
 )
 @click.option(
     "--verbose",
-    envvar="VERBOSE",
     default=False,
     is_flag=True,
     show_default=True,
@@ -198,7 +193,6 @@ def influx_query(query: str, prometheus_url: str) -> Tuple[float, float]:
 )
 @click.option(
     "--git-push-url",
-    envvar="GIT_PUSH_URL",
     default=None,
     show_default=True,
     help="URL to push to remote after commiting results. If not provided, updates will still be committed locally, but they will not be pushed to the remote.",
@@ -283,7 +277,6 @@ def promq(ctx, url: str):
 )
 @click.option(
     "--database_name",
-    envvar="STATUS_PUSHER_INFLUXDB_DATABASE_NAME",
     default="mydb",
     show_default=True,
     help="database name to target with InfluxDB query",
