@@ -166,7 +166,8 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     # If not, we could either provide arbitrary cli params to be passed in, or simply
     # permit the user to build the complete query url with params themselves.
 
-    url_params = {"db": db_name, "q": query}
+    # NOTE influxdb query api seems to require q param to be FIRST 
+    url_params = {"q": query,"db": db_name}
 
     logger.debug(f'querying {url_qry_path} with db_name: {db_name}, query: {query}')
     response = requests.get(url_qry_path, params=url_params)
