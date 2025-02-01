@@ -183,18 +183,22 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     
     logger.debug(f'response.text:\n{response.text}')
 
-    # Remember the json() method actually returns a dictionary
-    # data = response.json()
-
     logger.debug(f'got data {response.text}')
 
+    # Remember the json() method actually returns a dictionary
+    data = response.json()
+
+    logger.debug(f'interpreted data as {pprint.pformat(data)}')
     
     # TODO
-    # expect something
-    # assert something
+    # expect only a single value
+    assert(len(data["results"]) == 1)
 
     # TODO
-    (metric, value) = (None, None)
+    (metric, value) = (
+        datetime.datetime.fromisoformat(data["results"][0]["series"][0]["values"][0][0]).timestamp(),
+        data["results"][0]["series"][0]["values"][0][1]
+        )
 
     return (metric, value)
 
