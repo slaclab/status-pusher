@@ -6,7 +6,7 @@ TAG ?= latest
 #GIT_TOKEN ?= '<GIT_TOKEN NOT PROVIDED>'
 CONTAINER_REGISTRY ?= localhost
 
-default: pytest test
+default: pytest test_promq
 
 pytest:
 	echo "running pytest module"
@@ -64,7 +64,7 @@ push:
 ################################
 # live tests against github repo
 ################################
-test::
+test_promq::
 	echo "Running Live (read-only) test against real repo on github.com"
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
 	STATUS_PUSHER_PROMQ_URL='https://prometheus.slac.stanford.edu' \

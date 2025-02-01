@@ -262,6 +262,8 @@ def cli(
         if git_push_url:
             push_res = push(git_repo, git_branch, git_push_url)
             logger.info(f"push result: {push_res}")
+        else:
+            logger.info(f"Will not push because git_push_url == False")
 
 
 @click.option(
