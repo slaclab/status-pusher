@@ -150,17 +150,17 @@ def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     data = p.custom_query(query=query)
     # expect that only a single value is returned from the query
     assert len(data) == 1
-    # expected query output is [{'metric': {}, 'value': [1729872285.678, '1']}]
+    # expected query output like [{'metric': {}, 'value': [1729872285.678, '1']}]
 
     (metric, value) = (data[0]["value"][0], float(data[0]["value"][1]))
 
     return (metric, value)
 
 
-def influx_query(db_name: str, query: str, influx_url: str) -> Tuple[float, float]:
+def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, float]:
     """query influx using http api"""
-    path = "/query"
-    url = influx_url + path
+    path = "/query?"
+    url_qry_path = influx_url + path
 
     # TODO Determine if we can know all potentially required url params in advance?
     # If not, we could either provide arbitrary cli params to be passed in, or simply
@@ -168,10 +168,26 @@ def influx_query(db_name: str, query: str, influx_url: str) -> Tuple[float, floa
 
     url_params = {"db": db_name, "q": query}
 
-    logger.debug(f'querying {influx_url} with db_name: "{db_name}", query: "{query}"')
-    response = requests.get(influx_url, params=url_params)
+    logger.debug(f'querying {url_qry_path} with db_name: {db_name}, query: {query}')
+    response = requests.get(url_qry_path, params=url_params)
 
-    data = response.json()
+    # raise an HTTPError exception if call failed
+    response.raise_for_status()
+
+    # expected query output like:
+    # {"results":[{"statement_id":0,"series":[{"name":"squeue","columns":["time","last"],"values":[["2025-02-01T03:11:34Z",1]]}]}]}
+
+    logger.debug(f'got response {response}')
+
+    
+    logger.debug(f'response.data():\n{response.data()}')
+
+    # Remember the json() method actually returns a dictionary
+    # data = response.json()
+
+    logger.debug(f'got data {response.text}')
+
+    
     # TODO
     # expect something
     # assert something
@@ -242,6 +258,11 @@ def cli(
     # queries specified by subcommand now are executed, populating ctx.obj:StatusRecord
     # and finally the call_on_close handler below does the commit and push
 
+    # TODO make sure this ONLY runs if subcommand succeeded
+    # click seems to run call_on_close even if subcommand raises exception.  So we need to 
+    # maybe define git_commit_and_push() in the main namespace and call it from the subcommands
+    # instead of here.
+
     @ctx.call_on_close
     def git_commit_and_push():
         logger.debug(f"writing report file at {filepath}")
@@ -299,20 +320,20 @@ def promq(ctx, url: str):
 
 
 @click.option(
-    "--url",
-    default="http://influxdb:8086/",
-    show_default=True,
-    help="url for influxdb endpoint",
-)
-@click.option(
     "--db-name",
     default="mydb",
     show_default=True,
     help="database name to target with InfluxDB query",
 )
+@click.option(
+    "--url",
+    default="http://influxdb:8086/",
+    show_default=True,
+    help="url for influxdb endpoint",
+)
 @cli.command()
 @click.pass_context
-def influxq(ctx, url, db_name):
+def influxq(ctx, db_name, url):
     """
     InfluxDB command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
@@ -321,11 +342,12 @@ def influxq(ctx, url, db_name):
         f"influxq command called with parent cli params {ctx.parent.params} and command params {ctx.params}"
     )
 
+    influxdb_db_name = ctx.params["db_name"]
     influxdb_url = ctx.params["url"]
-    influxdb_query = ctx.parent.params["query"]
+    influxdb_qry = ctx.parent.params["query"]
 
-    logger.debug(f'calling influxdb_query({"influxdb_query"}, {"influxdb_url"})')
-    epoch_ts, value = influxdb_query(prom_query, prom_url)
+    logger.debug(f'calling influxdb_query({"influxdb_qry"}, {"influxdb_url"})')
+    epoch_ts, value = influx_query(influxdb_db_name, influxdb_url, influxdb_qry)
     logger.info(f"got data at ts {ctx.obj.epoch_ts}: {ctx.obj.value}")
 
     # populate context object for cli handler to access
