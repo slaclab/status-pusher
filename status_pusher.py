@@ -181,7 +181,7 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     logger.debug(f'got response {response}')
 
     
-    logger.debug(f'response.data():\n{response.data()}')
+    logger.debug(f'response.text:\n{response.text}')
 
     # Remember the json() method actually returns a dictionary
     # data = response.json()

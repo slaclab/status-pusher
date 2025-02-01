@@ -78,7 +78,7 @@ test_influxdb::
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
 	STATUS_PUSHER_INFLUXQ_URL='https://influxdb.slac.stanford.edu' \
 	STATUS_PUSHER_INFLUXQ_DB_NAME='slurm' \
-	STATUS_PUSHER_QUERY='SELECT last("jobs") FROM "squeue" WHERE (("state" =~ /^RUNNING$/) AND ("partition" =~ /^(ada|ampere|ampere_roma_milano|milano|milano_roma|milano_roma_ampere|roma|roma_ampere_milano|roma_milano|roma_milano_ampere|test|testweka|turing)$/)) LIMIT 1' \
+	STATUS_PUSHER_QUERY='SELECT last("jobs") FROM "squeue" LIMIT 1' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
 	./.venv/bin/python3 status_pusher.py influxq
