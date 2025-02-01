@@ -339,7 +339,7 @@ def influxq(ctx, db_name, url):
     Performs checkout, pull, prometheus_query, commit, push.
     """
     logger.debug(
-        f"influxq command called with parent cli params {ctx.parent.params} and command params {ctx.params}"
+        f"influxq command called with parent cli params {pprint.pformat(ctx.parent.params)} and command params {pprint.pformat(ctx.params)}"
     )
 
     influxdb_db_name = ctx.params["db_name"]
