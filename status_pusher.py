@@ -194,7 +194,7 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     # expect only a single value
     assert(len(data["results"]) == 1)
 
-    # TODO
+    # TODO maybe make zulu_to_epoch function for isoformat handling
     (metric, value) = (
         datetime.datetime.fromisoformat(data["results"][0]["series"][0]["values"][0][0]).timestamp(),
         data["results"][0]["series"][0]["values"][0][1]

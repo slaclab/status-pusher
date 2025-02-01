@@ -6,7 +6,7 @@ TAG ?= latest
 #GIT_TOKEN ?= '<GIT_TOKEN NOT PROVIDED>'
 CONTAINER_REGISTRY ?= localhost
 
-default: pytest test_promq
+default: pytest test_promq test_influxdb
 
 pytest:
 	echo "running pytest module"
