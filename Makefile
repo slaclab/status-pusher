@@ -65,7 +65,7 @@ push:
 # live tests against github repo
 ################################
 test_promq::
-	echo "Running Live (read-only) test against real repo on github.com"
+	echo "Running Live (read-only) test against real influxdb server and repo on github.com"
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
 	STATUS_PUSHER_PROMQ_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
@@ -73,8 +73,18 @@ test_promq::
 	STATUS_PUSHER_GIT_BRANCH='test_branch' \
 	./.venv/bin/python3 status_pusher.py promq
 
+test_influxdb::
+	echo "Running Live (read-only) test against real Prometheus server and repo on github.com"
+	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
+	STATUS_PUSHER_INFLUXQ_URL='https://influxdb.slac.stanford.edu' \
+	STATUS_PUSHER_INFLUXQ_DB_NAME_='slurm' \
+	STATUS_PUSHER_QUERY='SELECT last("jobs") FROM "squeue" WHERE (("state" =~ /^RUNNING$/) AND ("partition" =~ /^(ada|ampere|ampere_roma_milano|milano|milano_roma|milano_roma_ampere|roma|roma_ampere_milano|roma_milano|roma_milano_ampere|test|testweka|turing)$/)) LIMIT 1' \
+	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
+	STATUS_PUSHER_GIT_BRANCH='test_branch' \
+	./.venv/bin/python3 status_pusher.py influxq
+
 test-push: secrets
-	echo "Running Live (read-write) test against real repo on github.com"
+	echo "Running Live (read-write) test that will push to real repo on github.com"
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
 	STATUS_PUSHER_PROMQ_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
