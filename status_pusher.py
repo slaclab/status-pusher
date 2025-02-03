@@ -152,9 +152,10 @@ def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
     assert len(data) == 1
     # expected query output like [{'metric': {}, 'value': [1729872285.678, '1']}]
 
-    (metric, value) = (data[0]["value"][0], float(data[0]["value"][1]))
+    (epoch_ts, value) = (data[0]["value"][0], float(data[0]["value"][1]))
+    logger.debug(f"returned (epoch_ts, value) {(epoch_ts, value)}")
 
-    return (metric, value)
+    return (epoch_ts, value)
 
 
 def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, float]:
@@ -166,10 +167,10 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     # If not, we could either provide arbitrary cli params to be passed in, or simply
     # permit the user to build the complete query url with params themselves.
 
-    # NOTE influxdb query api seems to require q param to be FIRST 
-    url_params = {"q": query,"db": db_name}
+    # NOTE influxdb query api seems to require q param to be FIRST
+    url_params = {"q": query, "db": db_name}
 
-    logger.debug(f'querying {url_qry_path} with db_name: {db_name}, query: {query}')
+    logger.debug(f"querying {url_qry_path} with db_name: {db_name}, query: {query}")
     response = requests.get(url_qry_path, params=url_params)
 
     # raise an HTTPError exception if call failed
@@ -178,29 +179,32 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     # expected query output like:
     # {"results":[{"statement_id":0,"series":[{"name":"squeue","columns":["time","last"],"values":[["2025-02-01T03:11:34Z",1]]}]}]}
 
-    logger.debug(f'got response {response}')
+    logger.debug(f"got response {response}")
 
-    
-    logger.debug(f'response.text:\n{response.text}')
+    logger.debug(f"response.text:\n{response.text}")
 
-    logger.debug(f'got data {response.text}')
+    logger.debug(f"got data {response.text}")
 
     # Remember the json() method actually returns a dictionary
     data = response.json()
 
-    logger.debug(f'interpreted data as {pprint.pformat(data)}')
-    
+    logger.debug(f"interpreted data as {pprint.pformat(data)}")
+
     # TODO
     # expect only a single value
-    assert(len(data["results"]) == 1)
+    assert len(data["results"]) == 1
 
-    # TODO maybe make zulu_to_epoch function for isoformat handling
-    (metric, value) = (
-        datetime.datetime.fromisoformat(data["results"][0]["series"][0]["values"][0][0]).timestamp(),
-        data["results"][0]["series"][0]["values"][0][1]
-        )
+    (epoch_ts, value) = (
+        # TODO maybe make zulu_to_epoch function for isoformat handling
+        #      Actually, we don't want the ts from the qry response, but the ts of the test
+        #      running it, which is the default val
+        datetime.datetime.fromisoformat(
+            data["results"][0]["series"][0]["values"][0][0]
+        ).timestamp(),
+        data["results"][0]["series"][0]["values"][0][1],
+    )
 
-    return (metric, value)
+    return (epoch_ts, value)
 
 
 @click.group()
@@ -263,8 +267,11 @@ def cli(
     # queries specified by subcommand now are executed, populating ctx.obj:StatusRecord
     # and finally the call_on_close handler below does the commit and push
 
-    # TODO make sure this ONLY runs if subcommand succeeded
-    # click seems to run call_on_close even if subcommand raises exception.  So we need to 
+    # TODO determine if we want this tor un and commit the record even if the subcommand fails.
+    #      The timestamp in that case will be the default created by the StatusRecorfd dataclass,
+    #      and the status will be "Unknown".
+    #
+    # click call_on_close even if subcommand raises exception.  So we need to
     # maybe define git_commit_and_push() in the main namespace and call it from the subcommands
     # instead of here.
 
@@ -314,7 +321,7 @@ def promq(ctx, url: str):
 
     logger.debug(f'calling prometheus_query({"prom_query"}, {"prom_url"})')
     epoch_ts, value = prometheus_query(prom_query, prom_url)
-    logger.info(f"got data at ts {epoch_ts}: {value}")
+    logger.info(f"prometheus_query returned (epoch_ts, value): ({epoch_ts}, {value})")
 
     # populate context object for cli handler to access
     ctx.obj.epoch_ts = epoch_ts
@@ -353,7 +360,7 @@ def influxq(ctx, db_name, url):
 
     logger.debug(f'calling influxdb_query({"influxdb_qry"}, {"influxdb_url"})')
     epoch_ts, value = influx_query(influxdb_db_name, influxdb_url, influxdb_qry)
-    logger.info(f"got data at ts {ctx.obj.epoch_ts}: {ctx.obj.value}")
+    logger.info(f"influx_query returned (epoch_ts, value): ({epoch_ts}, {value})")
 
     # populate context object for cli handler to access
     ctx.obj.epoch_ts = epoch_ts
