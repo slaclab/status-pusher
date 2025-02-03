@@ -38,6 +38,11 @@ class StatusRecord:
 
 def git_clone(git_url: str, git_branch: str, git_dir, clear=False, depth=1) -> git.Repo:
     """create the local git clone"""
+    if git_branch != "main":
+        raise NotImplementedError(
+            "git_clone method currently always uses the default branch"
+        )
+
     logger.debug(f"git_clone checking for existing directory")
     if os.path.isdir(git_dir):
         if clear:
@@ -59,13 +64,14 @@ def git_clone(git_url: str, git_branch: str, git_dir, clear=False, depth=1) -> g
 
             logger.debug(f"pulling from origin {origin} with depth {depth}")
 
+            # TODO implement git_branch option
             # TODO handle branch that doesn't exist yet on remote
+
             # TODO we need to handle the case that an existing dir has a different branch checked out -
             # ie, always do a checkout of the specified branch.
+
             # TODO we should separate the pull/checkout logic from the git_clone function for clarity
             # as git clone normally doesn't do either for an existing local repo
-            # We might even consider doing the git handling in shell in the Makefile for simplicity...
-            # unless we really may need this level of programmatic repo control in a module importing us.
             origin.pull(depth=depth)
 
             git_repo = git.Repo(git_dir)
@@ -107,6 +113,11 @@ def commit(
 ) -> git.objects.commit.Commit:
     """commit and push changes to git"""
     # TODO check out desired branch prior to committing
+    if git_branch != "main":
+        raise NotImplementedError(
+            "commit method currently always uses the default branch"
+        )
+
     logger.debug(f"committing updates to {filepath}")
     index = git_repo.index
     index.add([filepath])
@@ -260,6 +271,12 @@ def cli(
 
     # ensure we got a StatusRecord object in case we were invoked outside __main__
     ctx.ensure_object(StatusRecord)
+
+    # TODO handle non-default branch
+    if git_branch != "main":
+        raise NotImplementedError(
+            "status_pusher currently always uses the default branch"
+        )
 
     git_repo = git_clone(git_url, git_branch, git_dir)
     logger.info(f"git_repo: {git_repo}")

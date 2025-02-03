@@ -63,6 +63,8 @@ push:
 
 ################################
 # live tests against github repo
+# NOTE STATUS_PUSHER_GIT_BRANCH is NOT Implemented.
+# `main` branch will always be used
 ################################
 test_promq::
 	echo "Running Live (read-only) test against real influxdb server and repo on github.com"
@@ -70,7 +72,7 @@ test_promq::
 	STATUS_PUSHER_PROMQ_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
-	STATUS_PUSHER_GIT_BRANCH='test_branch' \
+	STATUS_PUSHER_GIT_BRANCH='main' \
 	./.venv/bin/python3 status_pusher.py promq
 
 test_influxdb::
@@ -80,7 +82,7 @@ test_influxdb::
 	STATUS_PUSHER_INFLUXQ_DB_NAME='slurm' \
 	STATUS_PUSHER_QUERY='SELECT last("jobs") FROM "squeue" LIMIT 1' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
-	STATUS_PUSHER_GIT_BRANCH='test_branch' \
+	STATUS_PUSHER_GIT_BRANCH='main' \
 	./.venv/bin/python3 status_pusher.py influxq
 
 test-push: secrets
@@ -89,6 +91,6 @@ test-push: secrets
 	STATUS_PUSHER_PROMQ_URL='https://prometheus.slac.stanford.edu' \
 	STATUS_PUSHER_QUERY='avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )' \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
-	STATUS_PUSHER_GIT_BRANCH='test_branch' \
+	STATUS_PUSHER_GIT_BRANCH='main' \
 	STATUS_PUSHER_GIT_PUSH_URL='https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status' \
 	./.venv/bin/python3 status_pusher.py promq
