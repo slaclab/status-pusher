@@ -10,7 +10,7 @@ default: pytest test_promq test_influxdb
 
 pytest:
 	echo "running pytest module"
-	./.venv/bin/python3 -m pytest ./test
+	./.venv/bin/python3 -m pytest -s ./test
 
 secrets:
 	mkdir -p ./.secrets
