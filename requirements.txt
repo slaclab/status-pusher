@@ -8,5 +8,7 @@ loguru
 # dev reqs follow
 #################
 pytest
+coverage
+pytest-cov
 black
 ipython

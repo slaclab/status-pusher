@@ -10,8 +10,10 @@ default: pytest test_promq test_influxdb
 
 pytest:
 	echo "running pytest module"
-	./.venv/bin/python3 -m pytest -s ./test
-
+	# -s to output standard console output (eg print stmts)
+	#./.venv/bin/python3 -m pytest -s ./test
+	./.venv/bin/pytest --cov=status_pusher ./
+ 
 secrets:
 	mkdir -p ./.secrets
 	set -e; for i in s3df-status-pusher; do vault kv get --field=$$i $(SECRET_PATH) > $(SECRET_TEMPFILE)/$$i ; done
