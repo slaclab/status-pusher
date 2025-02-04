@@ -8,11 +8,14 @@ CONTAINER_REGISTRY ?= localhost
 
 default: pytest test_promq test_influxdb
 
+coverage_html:
+	echo "running pytest with html coverage output"
+	./.venv/bin/pytest --cov=status_pusher ./ --cov-report html
+
 pytest:
-	echo "running pytest module"
+	echo "running pytest with coverage and console output"
 	# -s to output standard console output (eg print stmts)
-	#./.venv/bin/python3 -m pytest -s ./test
-	./.venv/bin/pytest --cov=status_pusher ./
+	./.venv/bin/pytest -s --cov=status_pusher --cov-report term-missing ./ 
  
 secrets:
 	mkdir -p ./.secrets

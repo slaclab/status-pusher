@@ -38,7 +38,7 @@ def test_add_file(git_repo, repo_path):
     pprint.pprint(git_repo.head.commit.diff())
     print("################# debug ###############")
 
-    #assert "test_file.txt" in git_repo.index.diff("HEAD")
+    # assert "test_file.txt" in git_repo.index.diff("HEAD")
 
 
 def test_placeholder():
