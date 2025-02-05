@@ -45,7 +45,7 @@ def test_git_clone(git_repo):
     """
     Test git_clone function by cloning the test fixture
     """
-    # clone the test fixture repo 
+    # clone the test fixture repo
 
 
 def test_epoch_to_zulu():

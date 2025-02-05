@@ -12,22 +12,10 @@ from pathlib import PosixPath
 import pytest
 
 
-@pytest.fixture(name="test-repo", scope="session")
-def repo(tmp_path: PosixPath) -> Repo:
-    """
-    Create temp git repo fixture for testing
-    """
-    pass
-
-
-import pytest
-import git
-
-
-@pytest.fixture
-def repo_path(tmpdir) -> PosixPath:
+@pytest.fixture(name="repo_path", scope="function")
+def repo_path(tmpdir: PosixPath) -> PosixPath:
     """Fixture: init a temporary Git repository and yield its PosixPath."""
-    repo = git.Repo.init(tmpdir)
+    repo = Repo.init(tmpdir)
 
     # add a file not in the tree
     file_path = tmpdir / "file_in_tree.txt"
@@ -45,7 +33,7 @@ def repo_path(tmpdir) -> PosixPath:
     yield PosixPath(repo.working_dir)
 
 
-@pytest.fixture
-def git_repo(repo_path) -> Repo:
+@pytest.fixture(name="git_repo", scope="function")
+def git_repo(repo_path: PosixPath) -> Repo:
     """Fixture: Git repository."""
     yield Repo(repo_path)
