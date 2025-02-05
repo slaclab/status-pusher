@@ -25,24 +25,36 @@ GIT_PUSH_URL = "https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@githu
 
 
 def test_conftest_fixtures(git_repo, repo_path):
-    """Test the conftest git repo fixture."""
+    """Test the conftest git repo fixture and its correct usage."""
+
+    # check the fixture's untracked file
+    assert "file_not_in_tree.txt" in git_repo.untracked_files
+
+    # stage a file without committing it and check it's in the diff
     file_path = repo_path / "test_file.txt"
     with open(file_path, "w") as f:
         f.write("Test content")
 
     git_repo.index.add([str(file_path)])
+    assert git_repo.index.diff(git_repo.head.commit)[0].a_path == "test_file.txt"
 
-    print(
-        "\n################# Debug Output #######################################################"
-    )
+    print("\n################# Debug Output ####################################")
     print(file_path)
-    pprint.pprint(git_repo.head.commit.diff())
-    print(
-        "################# /Debug Output ########################################################"
-    )
+    print("################# /Debug Output #####################################")
 
-    # TODO fix this - how do we actually get the diff list?
-    # assert "test_file.txt" in git_repo.index.diff("HEAD")
+    # change but don't add an in-tree file
+    in_tree_file_path = repo_path / "file_in_tree.txt"
+    with open(in_tree_file_path, "w") as f:
+        f.write("Overwritten test content")
+
+    print("\n################# Debug Output ####################################")
+    pprint.pprint(git_repo.index.diff(git_repo.head.commit)[0].a_path)
+    print("################# /Debug Output #####################################")
+
+    # TODO fix this - how do we actually get the diff list and/or diffs?
+    # may need to look at gitpython's unit tests - the docs point to them for
+    # apparently undocumented stuff
+    # assert "file_in_tree.txt" in git_repo.index.diff(git_repo.head.commit)
 
 
 def test_git_clone(git_repo):
