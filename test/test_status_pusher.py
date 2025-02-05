@@ -32,10 +32,14 @@ def test_conftest_fixtures(git_repo, repo_path):
 
     git_repo.index.add([str(file_path)])
 
-    print("\n################# debug ###############")
+    print(
+        "\n################# Debug Output #######################################################"
+    )
     print(file_path)
     pprint.pprint(git_repo.head.commit.diff())
-    print("################# debug ###############")
+    print(
+        "################# /Debug Output ########################################################"
+    )
 
     # TODO fix this - how do we actually get the diff list?
     # assert "test_file.txt" in git_repo.index.diff("HEAD")
