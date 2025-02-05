@@ -28,13 +28,19 @@ import git
 def repo_path(tmpdir) -> PosixPath:
     """Fixture: init a temporary Git repository and yield its PosixPath."""
     repo = git.Repo.init(tmpdir)
-    # Note we need an initial commit to avoid git diff failing with "fatal: bad revision 'HEAD'"
-    repo.index.commit("init commit")
 
     # add a file not in the tree
-    file_path = tmpdir / "not_in_git.txt"
+    file_path = tmpdir / "file_in_tree.txt"
     with open(file_path, "w") as f:
-        f.write("content")
+        f.write("content of file_in_tree.txt")
+
+    # Note we need an initial commit to avoid git diff failing with "fatal: bad revision 'HEAD'"
+    repo.index.commit("init commit - file_in_tree.txt")
+
+    # add a file not in the tree
+    file_path = tmpdir / "file_not_in_tree.txt"
+    with open(file_path, "w") as f:
+        f.write("content of file_not_in_tree.txt")
 
     yield PosixPath(repo.working_dir)
 

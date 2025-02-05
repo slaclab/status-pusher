@@ -24,7 +24,7 @@ GIT_BRANCH = "test_branch"
 GIT_PUSH_URL = "https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status"
 
 
-def test_add_file(git_repo, repo_path):
+def test_conftest_fixtures(git_repo, repo_path):
     """Test the conftest git repo fixture."""
     file_path = repo_path / "test_file.txt"
     with open(file_path, "w") as f:
@@ -34,24 +34,18 @@ def test_add_file(git_repo, repo_path):
 
     print("\n################# debug ###############")
     print(file_path)
-    # pprint.pprint(git_repo.index.diff(git_repo.head.commit))
     pprint.pprint(git_repo.head.commit.diff())
     print("################# debug ###############")
 
+    # TODO fix this - how do we actually get the diff list?
     # assert "test_file.txt" in git_repo.index.diff("HEAD")
 
 
-def test_placeholder():
+def test_git_clone(git_repo):
     """
-    Just a placeholder for now
+    Test git_clone function by cloning the test fixture
     """
-    pass
-
-
-def test_git_clone():
-    """
-    Test git_clone function
-    """
+    # clone the test fixture repo 
 
 
 def test_epoch_to_zulu():
