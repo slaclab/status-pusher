@@ -326,7 +326,7 @@ def cli(
 @click.pass_context
 def promq(ctx, url: str):
     """
-    Prometheus_query command wrapped to do pre and post git actions.
+    Prometheus query command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
     """
     logger.debug(
@@ -364,7 +364,7 @@ def promq(ctx, url: str):
 @click.pass_context
 def influxq(ctx, db_name, url):
     """
-    InfluxDB command wrapped to do pre and post git actions.
+    InfluxDB query command wrapped to do pre and post git actions.
     Performs checkout, pull, prometheus_query, commit, push.
     """
     logger.debug(
