@@ -7,6 +7,7 @@ See conftest.py for definition of git repo test fixture that is created per test
 import git
 from git import Repo
 
+import os
 from pathlib import PosixPath
 import pprint
 
@@ -57,13 +58,52 @@ def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
     # assert "file_in_tree.txt" in git_repo.index.diff(git_repo.head.commit)
 
 
-def test_git_clone_no_existing_dir(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
+def test_git_clone_no_existing_dir(
+    git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath
+):
     """
     Test git_clone function by cloning the test repo fixture.
     case: no existing target dir exists
     """
     # get a temp dir for the cloned repo
     clone_path = tmp_path / "cloned_repo"
+
+    # clone the test fixture repo
+
+    repo_path_str = str(repo_path)
+    repo_branch_str = "main"
+    tmp_path_str = str(clone_path)
+
+    print("\n################# Debug Output ####################################")
+    print(repo_path_str)
+    print(clone_path)
+    print("################# /Debug Output ####################################")
+
+    cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
+    assert cloned_repo.git_dir.startswith(cloned_repo.working_tree_dir)
+    # check it's where we intended it to be
+    assert cloned_repo.working_tree_dir == str(clone_path)
+
+
+# """
+# expected to fail with existing dir that's not a git repo.
+# TODO: add an explicit check in the method and raise a message we'll expect here.
+# """
+
+
+@pytest.mark.xfail
+def test_git_clone_with_existing_dir_not_a_repo(
+    git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath
+):
+    """
+    Test git_clone function by cloning the test repo fixture.
+    case: target dir already exists but is NOT existing repo
+    """
+    # get a temp dir for the cloned repo
+    clone_path = tmp_path / "cloned_repo"
+
+    # make the pre-existing dir  (empty)
+    os.mkdir(clone_path)
 
     # clone the test fixture repo
 
