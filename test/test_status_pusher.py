@@ -5,8 +5,12 @@ Test module for status_pusher.py
 See conftest.py for definition of git repo test fixture that is created per test method
 """
 import git
+from git import Repo
+
+from pathlib import PosixPath
 import pprint
 
+import tempfile
 import pytest
 
 from unittest.mock import MagicMock, patch
@@ -24,7 +28,7 @@ GIT_BRANCH = "test_branch"
 GIT_PUSH_URL = "https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status"
 
 
-def test_conftest_fixtures(git_repo, repo_path):
+def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
     """Test the conftest git repo fixture and its correct usage."""
 
     # check the fixture's untracked file
@@ -57,11 +61,15 @@ def test_conftest_fixtures(git_repo, repo_path):
     # assert "file_in_tree.txt" in git_repo.index.diff(git_repo.head.commit)
 
 
-def test_git_clone(git_repo):
+def test_git_clone(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     """
     Test git_clone function by cloning the test fixture
     """
+    # get a temp dir
+    tmp_path
     # clone the test fixture repo
+
+    # sp.git_clone(repo_path,'main', tmp_path, clear=False, depth=1)
 
 
 def test_epoch_to_zulu():

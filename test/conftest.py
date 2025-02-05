@@ -4,22 +4,20 @@ Here we will create a temporary git repo as a test fixture that will be
 reset on a per-test-method basis.
 """
 
-import tempfile
-import shutil
-
 from git import Repo
 from pathlib import PosixPath
 import pytest
 
 
 @pytest.fixture(name="repo_path", scope="function")
-def repo_path(tmpdir: PosixPath) -> PosixPath:
+def repo_path(tmp_path: PosixPath) -> PosixPath:
     """
     Fixture: init a temporary Git repository and yield its PosixPath.
 
     Note we need an initial commit to avoid git diff failing with "fatal: bad revision 'HEAD'"
     We will include a committed file in the tree, and an untracked file in the repo dir.
     """
+    tmpdir = tmp_path / "status_pusher_test_repo"
 
     repo = Repo.init(tmpdir)
 
