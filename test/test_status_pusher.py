@@ -51,10 +51,6 @@ def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
     with open(in_tree_file_path, "w") as f:
         f.write("Overwritten test content")
 
-    print("\n################# Debug Output ####################################")
-    pprint.pprint(git_repo.index.diff(git_repo.head.commit)[0].a_path)
-    print("################# /Debug Output #####################################")
-
     # TODO fix this - how do we actually get the diff list and/or diffs?
     # may need to look at gitpython's unit tests - the docs point to them for
     # apparently undocumented stuff
@@ -65,11 +61,21 @@ def test_git_clone(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     """
     Test git_clone function by cloning the test fixture
     """
-    # get a temp dir
-    tmp_path
+    # get a temp dir for the cloned repo
+    clone_path = tmp_path / "cloned_repo"
+
     # clone the test fixture repo
 
-    # sp.git_clone(repo_path,'main', tmp_path, clear=False, depth=1)
+    repo_path_str = str(repo_path)
+    repo_branch_str = 'main'
+    tmp_path_str = str(clone_path)
+
+    print("\n################# Debug Output ####################################")
+    print(repo_path_str)
+    print(clone_path)
+    print("################# /Debug Output ####################################")
+
+    sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
 
 
 def test_epoch_to_zulu():
