@@ -67,7 +67,7 @@ def test_git_clone(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     # clone the test fixture repo
 
     repo_path_str = str(repo_path)
-    repo_branch_str = 'main'
+    repo_branch_str = "main"
     tmp_path_str = str(clone_path)
 
     print("\n################# Debug Output ####################################")
@@ -75,7 +75,8 @@ def test_git_clone(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     print(clone_path)
     print("################# /Debug Output ####################################")
 
-    sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
+    cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
+    assert cloned_repo.git_dir.startswith(cloned_repo.working_tree_dir)
 
 
 def test_epoch_to_zulu():
