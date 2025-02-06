@@ -85,12 +85,11 @@ def test_git_clone_no_existing_dir(
     assert cloned_repo.working_tree_dir == str(clone_path)
 
 
-@pytest.mark.raises(git.exc.InvalidGitRepositoryError)
 def test_git_clone_with_existing_dir_not_a_repo(
     git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath
 ):
     """
-    Test failure of git_clone function by attempting cloning the test repo fixture.
+    Test correct failure mode for git_clone function for existing target dir
     case: target dir already exists but is NOT existing repo
     """
     # get a temp dir for the cloned repo
@@ -106,7 +105,35 @@ def test_git_clone_with_existing_dir_not_a_repo(
     tmp_path_str = str(clone_path)
 
     # This should raise git.exc.InvalidGitRepositoryError
+    with pytest.raises(git.exc.InvalidGitRepositoryError):
+        cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
+
+
+# TODO complete this
+def test_git_clone_with_existing_repo(
+    git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath
+):
+    """
+    Test git_clone function by cloning (or in this case updating) the test repo fixture.
+    case: target dir already exists and IS an existing repo
+    """
+    # get a temp dir for the cloned repo
+    clone_path = tmp_path / "cloned_repo"
+
+    # clone the test fixture repo
+
+    repo_path_str = str(repo_path)
+    repo_branch_str = "main"
+    tmp_path_str = str(clone_path)
+
+    # first clone the repo normally so it exists
     cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
+
+    # now make a change to the original test repo so we have changes to pull
+    # TODO
+
+    # test that the clone_repo() call appropriately pulls changes
+    # TODO
 
 
 def test_epoch_to_zulu():
