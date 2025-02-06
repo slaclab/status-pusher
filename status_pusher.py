@@ -36,7 +36,7 @@ class StatusRecord:
     status: str = "UNKNOWN"
 
 
-def git_clone(git_url: str, git_branch: str, git_dir, clear=False, depth=1) -> git.Repo:
+def git_clone(git_url: str, git_branch: str, git_dir, clear=False, depth=10) -> git.Repo:
     """create the local git clone"""
     if git_branch != "main":
         raise NotImplementedError(
