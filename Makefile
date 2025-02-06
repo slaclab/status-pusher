@@ -6,17 +6,23 @@ TAG ?= latest
 #GIT_TOKEN ?= '<GIT_TOKEN NOT PROVIDED>'
 CONTAINER_REGISTRY ?= localhost
 
-default: pytest test_promq test_influxdb
+default: pytest
+
+debug: pytest-debug test_promq test_influxdb
 
 coverage_html:
 	echo "running pytest with html coverage output"
 	./.venv/bin/pytest --cov=status_pusher ./ --cov-report html
 
-pytest:
+pytest-debug:
 	echo "running pytest with coverage and console output"
 	# -s to output standard console output (eg print stmts)
 	./.venv/bin/pytest -s --cov=status_pusher --cov-report term-missing ./ 
  
+pytest:
+	echo "running pytest with coverage (no console output)"
+	./.venv/bin/pytest --cov=status_pusher --cov-report term-missing ./ 
+
 secrets:
 	mkdir -p ./.secrets
 	set -e; for i in s3df-status-pusher; do vault kv get --field=$$i $(SECRET_PATH) > $(SECRET_TEMPFILE)/$$i ; done
@@ -100,4 +106,4 @@ test-push: secrets
 	./.venv/bin/python3 status_pusher.py promq
 
 generate-test-data:
-	.venv/bin/python3 test/generate_fake_test_data.py
+	.venv/bin/python3 test/util/generate_fake_test_data.py
