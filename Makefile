@@ -33,7 +33,6 @@ pip:
 	./.venv/bin/pip3 install -r requirements.txt
 
 black:
-	# discuss before applying to status_pusher.py
 	./.venv/bin/black ./
 	./.venv/bin/black ./test/
 
@@ -99,3 +98,6 @@ test-push: secrets
 	STATUS_PUSHER_GIT_BRANCH='main' \
 	STATUS_PUSHER_GIT_PUSH_URL='https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status' \
 	./.venv/bin/python3 status_pusher.py promq
+
+generate-test-data:
+	.venv/bin/python3 test/generate_fake_test_data.py
