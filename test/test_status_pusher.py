@@ -85,18 +85,12 @@ def test_git_clone_no_existing_dir(
     assert cloned_repo.working_tree_dir == str(clone_path)
 
 
-# """
-# expected to fail with existing dir that's not a git repo.
-# TODO: add an explicit check in the method and raise a message we'll expect here.
-# """
-
-
-@pytest.mark.xfail
+@pytest.mark.raises(git.exc.InvalidGitRepositoryError)
 def test_git_clone_with_existing_dir_not_a_repo(
     git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath
 ):
     """
-    Test git_clone function by cloning the test repo fixture.
+    Test failure of git_clone function by attempting cloning the test repo fixture.
     case: target dir already exists but is NOT existing repo
     """
     # get a temp dir for the cloned repo
@@ -111,15 +105,8 @@ def test_git_clone_with_existing_dir_not_a_repo(
     repo_branch_str = "main"
     tmp_path_str = str(clone_path)
 
-    print("\n################# Debug Output ####################################")
-    print(repo_path_str)
-    print(clone_path)
-    print("################# /Debug Output ####################################")
-
+    # This should raise git.exc.InvalidGitRepositoryError
     cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
-    assert cloned_repo.git_dir.startswith(cloned_repo.working_tree_dir)
-    # check it's where we intended it to be
-    assert cloned_repo.working_tree_dir == str(clone_path)
 
 
 def test_epoch_to_zulu():

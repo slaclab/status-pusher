@@ -27,7 +27,7 @@ def gen_fake_log_data(
     # note we want the spaces preceding the values to match Fettle's default format
     data = [[date.isoformat(), " success", f" {fake_value}"] for date in dates]
     output = io.StringIO()
-    writer = csv.writer(output, delimiter=',')
+    writer = csv.writer(output, delimiter=",")
     writer.writerows(data)
 
     return output.getvalue()

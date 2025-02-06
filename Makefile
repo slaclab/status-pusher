@@ -40,7 +40,6 @@ pip:
 
 black:
 	./.venv/bin/black ./
-	./.venv/bin/black ./test/
 
 clean-all: clean-secrets
 	rm -rf .venv/

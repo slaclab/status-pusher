@@ -36,45 +36,40 @@ class StatusRecord:
     status: str = "UNKNOWN"
 
 
-def git_clone(git_url: str, git_branch: str, git_dir, clear=False, depth=10) -> git.Repo:
+def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
     """create the local git clone"""
     if git_branch != "main":
         raise NotImplementedError(
             "git_clone method currently always uses the default branch"
         )
 
-    logger.debug(f"git_clone checking for existing directory")
     if os.path.isdir(git_dir):
-        if clear:
-            logger.debug(f"removing existing git directory {git_dir}")
-            shutil.rmtree(git_dir)
-        else:
-            # Pull to be sure we're up to date
-            logger.debug(f"found existing directory {git_dir}")
-            logger.debug(f"checking that existing directory is a valid repo")
+        # Pull to be sure we're up to date
+        logger.debug(f"found existing directory {git_dir}")
+        logger.debug(f"checking that existing directory is a valid repo")
 
-            git_repo = git.Repo(git_dir)
-            logger.debug(f"loaded existing git repo {git_repo}")
+        git_repo = git.Repo(git_dir)
+        logger.debug(f"loaded existing git repo {git_repo}")
 
-            origin = git_repo.remotes.origin
-            logger.debug(f"existing git repo has origin {origin}")
+        origin = git_repo.remotes.origin
+        logger.debug(f"existing git repo has origin {origin}")
 
-            origin_urls = list(git_repo.remotes.origin.urls)
-            logger.debug(f"{origin} has urls {origin_urls}")
+        origin_urls = list(git_repo.remotes.origin.urls)
+        logger.debug(f"{origin} has urls {origin_urls}")
 
-            logger.debug(f"pulling from origin {origin} with depth {depth}")
+        logger.debug(f"pulling from origin {origin} with depth {depth}")
 
-            # TODO implement git_branch option
-            # TODO handle branch that doesn't exist yet on remote
+        # TODO implement git_branch option
+        # TODO handle branch that doesn't exist yet on remote
 
-            # TODO we need to handle the case that an existing dir has a different branch checked out -
-            # ie, always do a checkout of the specified branch.
+        # TODO we need to handle the case that an existing dir has a different branch checked out -
+        # ie, always do a checkout of the specified branch.
 
-            # TODO we should separate the pull/checkout logic from the git_clone function for clarity
-            # as git clone normally doesn't do either for an existing local repo
-            origin.pull(depth=depth)
+        # TODO we should separate the pull/checkout logic from the git_clone function for clarity
+        # as git clone normally doesn't do either for an existing local repo
+        origin.pull(depth=depth)
 
-            git_repo = git.Repo(git_dir)
+        git_repo = git.Repo(git_dir)
     else:
         git_repo = git.Repo.clone_from(git_url, git_dir)
 
