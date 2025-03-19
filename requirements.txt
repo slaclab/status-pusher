@@ -1,4 +1,5 @@
 prometheus-api-client
+pydantic
 requests
 GitPython
 click

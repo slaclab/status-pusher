@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 import datetime
 import click
 import git
@@ -201,9 +201,6 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     assert len(data["results"]) == 1
 
     (epoch_ts, value) = (
-        # TODO maybe make zulu_to_epoch function for isoformat handling
-        #      Actually, we don't want the ts from the qry response, but the ts of the test
-        #      running it, which is the default val
         datetime.datetime.fromisoformat(
             data["results"][0]["series"][0]["values"][0][0]
         ).timestamp(),
