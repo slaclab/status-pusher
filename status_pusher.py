@@ -2,6 +2,7 @@
 
 from pydantic.dataclasses import dataclass
 from enum import Enum
+import operator
 
 import datetime
 import click
@@ -26,6 +27,14 @@ class Status(Enum):
     SUCCESS = "success"
     FAILED = "failed"
     DEGRADED = "degraded"
+
+
+class ConditionComparitor(Enum):
+    eq = operator.eq
+    lt = operator.lt
+    lte = operator.le
+    gt = operator.gt
+    gte = operator.ge
 
 
 @dataclass
@@ -299,7 +308,9 @@ def cli(
         logger.debug(f"Data record:\n{pprint.pformat(ctx.obj)}")
 
         report_file = PosixPath(git_dir, filepath)
-        update_log_file(report_file, ctx.obj.epoch_ts, ctx.obj.value, ctx.obj.status.value)
+        update_log_file(
+            report_file, ctx.obj.epoch_ts, ctx.obj.value, ctx.obj.status.value
+        )
 
         logger.info(f"updated log file: {report_file}")
 
