@@ -4,6 +4,8 @@ Test module for status_pusher.py
 
 See conftest.py for definition of git repo test fixture that is created per test method
 """
+import datetime
+
 import git
 from git import Repo
 
@@ -140,6 +142,10 @@ def test_epoch_to_zulu():
     """
     Test function
     """
+    epoch = 1742430572
+    actual = sp.epoch_to_zulu(epoch)
+    expected = "2025-03-20T00:29:32Z"
+    assert actual == expected
 
 
 def test_update_log_file():
