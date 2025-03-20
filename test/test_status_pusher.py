@@ -177,9 +177,9 @@ def test_prometheus_query():
     Test promtheus_query() function
     """
     # mock prometheus api call
-    mock_return_val = [{"metric": {}, "value": [1729872285.678, "1"]}]
-    mock_query = "avg( avg_over_time(foo{service=`bar`}[5m]))"
     mock_url = "https://mock.prometheus.url.local"
+    mock_query = "avg( avg_over_time(foo{service=`bar`}[5m]))"
+    mock_return_val = [{"metric": {}, "value": [1729872285.678, "1"]}]
 
     with patch.object(
         sp.PrometheusConnect, "custom_query", return_value=mock_return_val
@@ -232,17 +232,52 @@ def test_influx_query():
     assert actual == expected
 
 
-def test_promq():
+def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     """
     Test promq() cli command method
     """
-    # mock prometheus api call
+    # get a temp dir for the cloned repo
+    clone_path = tmp_path / "cloned_repo"
 
-    #    runner = CliRunner()
-    #    result = runner.invoke(sp.cli, ['promq'])
-    #
-    #    check result
-    pass
+    # prepare to use the test fixture repo
+    repo_path_str = str(repo_path)
+    repo_branch_str = "main"
+    tmp_path_str = str(clone_path)
+
+    # mock prometheus api call vals
+    mock_url = "https://mock.prometheus.url.local"
+    mock_query = "avg( avg_over_time(foo{service=`bar`}[5m]))"
+    mock_return_val = [{"metric": {}, "value": [1729872285.678, "1"]}]
+
+    # mock env vars
+    os_environ = {
+        "STATUS_PUSHER_GIT_DIR": tmp_path_str,
+        "STATUS_PUSHER_GIT_URL": repo_path_str,
+        "STATUS_PUSHER_PROMQ_URL": mock_url,
+        "STATUS_PUSHER_QUERY": mock_query,
+        "STATUS_PUSHER_FILEPATH": "public/status/test_report.log",
+        "STATUS_PUSHER_GIT_BRANCH": "main",
+    }
+    with patch.dict(os.environ, os_environ) as mock_env, patch.object(
+        sp.PrometheusConnect, "custom_query", return_value=mock_return_val
+    ) as mock_prom_qry:
+
+        runner = CliRunner()
+        cli_params = [
+            "promq",
+        ]
+        # mock prom connect; mock git (or set up local git repo to clone)
+        actual_result = runner.invoke(sp.cli, cli_params)
+
+        print(actual_result)
+
+        # assert expected calls
+        mock_prom_qry.assert_called_with(query=mock_query)
+
+        # TODO check our temporary git log file was updated
+
+    expected_result = "foo?"
+    assert actual_result == expected_result
 
 
 def test_influxq():
