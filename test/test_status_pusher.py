@@ -18,8 +18,10 @@ import pprint
 import tempfile
 import pytest
 from click.testing import CliRunner
+import urllib
 
 from unittest.mock import MagicMock, patch
+import requests_mock
 
 # module under test
 import status_pusher as sp
@@ -181,21 +183,53 @@ def test_prometheus_query():
 
     with patch.object(
         sp.PrometheusConnect, "custom_query", return_value=mock_return_val
-    ) as mock_prom:
-        # sp.PrometheusConnect = MagicMock(return_value = mock_return_val)
+    ) as mock_prom_qry:
         actual = sp.prometheus_query(query=mock_query, prometheus_url=mock_url)
-        mock_prom.assert_called_with(query=mock_query)
+        mock_prom_qry.assert_called_with(query=mock_query)
 
     expected = (1729872285.678, 1.0)
 
     assert actual == expected
 
 
-def test_influxdb_query():
+def test_influx_query():
     """
-    Test influxdb_query() function
+    Test influx_query() function
     """
     # mock influxdb api call
+    # expected query output like:
+
+    mock_return_val = {
+        "results": [
+            {
+                "statement_id": 0,
+                "series": [
+                    {
+                        "name": "squeue",
+                        "columns": ["time", "last"],
+                        "values": [["2025-02-01T03:11:34Z", 1]],
+                    }
+                ],
+            }
+        ]
+    }
+    mock_db_name = "mockdb"
+    mock_query = 'SELECT last("foo") FROM "bar" LIMIT 1'
+    mock_url = "https://mock.influxdb.url.local"
+
+    expected_uri = (
+        f"{mock_url}/query?q={urllib.parse.quote_plus(mock_query)}&db={mock_db_name}"
+    )
+
+    with requests_mock.Mocker() as req_mock:
+        req_mock.register_uri("GET", expected_uri, json=mock_return_val)
+        actual = sp.influx_query(
+            db_name=mock_db_name, influx_url=mock_url, query=mock_query
+        )
+
+    expected = (1738379494.0, 1)
+
+    assert actual == expected
 
 
 def test_promq():

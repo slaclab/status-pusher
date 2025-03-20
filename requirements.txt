@@ -13,3 +13,4 @@ coverage
 pytest-cov
 black
 ipython
+requests-mock
