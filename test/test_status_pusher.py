@@ -227,9 +227,12 @@ def test_influx_query():
     assert actual == expected
 
 
-def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkeypatch):
+def test_promq_cli(
+    git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkeypatch
+):
     """
-    Test promq() cli command method
+    Test promq() cli command method, mocking the Prometheus custom_query request,
+    and using our git repo fixture.
     """
     # get a temp dir for the cloned repo
     clone_path = tmp_path / "cloned_repo"
@@ -260,12 +263,14 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkey
         sp.PrometheusConnect, "custom_query", return_value=mock_return_val
     ) as mock_prom_qry:
 
-        cli_params = [ "promq" ]
+        cli_params = ["promq"]
 
         status_record = sp.StatusRecord()
 
         # invoke cli
-        actual_result = runner.invoke(sp.cli, cli_params, obj=status_record, auto_envvar_prefix='STATUS_PUSHER')
+        actual_result = runner.invoke(
+            sp.cli, cli_params, obj=status_record, auto_envvar_prefix="STATUS_PUSHER"
+        )
 
         print(actual_result.output)
         pprint.pprint(mock_prom_qry.mock_calls)
@@ -279,17 +284,91 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkey
     # assert status record SUCCESS
     assert status_record.status == sp.Status.SUCCESS
 
-    # assert status value 1.0 
+    # assert status value 1.0
     assert status_record.value == 1.0
 
     # TODO check our temporary git log file was updated
 
 
-def test_influxq():
+def test_influxq_cli(
+    git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkeypatch
+):
     """
-    Test influxq() command method
+    Test influxq() command method, mocking the http request and using our git repo fixture.
     """
-    # mock influxdb api call
+    # get a temp dir for the cloned repo
+    clone_path = tmp_path / "cloned_repo"
+
+    # prepare to use the test fixture repo
+    repo_path_str = str(repo_path)
+    repo_branch_str = "main"
+    tmp_path_str = str(clone_path)
+
+    # mock influx api call vals
+    mock_db_name = "mockdb"
+    mock_query = 'SELECT last("foo") FROM "bar" LIMIT 1'
+    mock_url = "https://mock.influxdb.url.local"
+    mock_return_val = {
+        "results": [
+            {
+                "statement_id": 0,
+                "series": [
+                    {
+                        "name": "squeue",
+                        "columns": ["time", "last"],
+                        "values": [["2025-02-01T03:11:34Z", 1]],
+                    }
+                ],
+            }
+        ]
+    }
+
+    # mock env vars
+    os_environ = {
+        "STATUS_PUSHER_GIT_DIR": tmp_path_str,
+        "STATUS_PUSHER_GIT_URL": repo_path_str,
+        "STATUS_PUSHER_INFLUXQ_URL": mock_url,
+        "STATUS_PUSHER_INFLUXQ_DB_NAME": mock_db_name,
+        "STATUS_PUSHER_QUERY": mock_query,
+        "STATUS_PUSHER_FILEPATH": "test_report.log",
+        "STATUS_PUSHER_GIT_BRANCH": "main",
+    }
+    runner = CliRunner()
+
+    # mock http req; use our git fixture
+    expected_uri = (
+        f"{mock_url}/query?q={urllib.parse.quote_plus(mock_query)}&db={mock_db_name}"
+    )
+
+    with patch.dict(
+        os.environ, os_environ, clear=True
+    ) as mock_env, requests_mock.Mocker() as req_mock:
+        req_mock.register_uri("GET", expected_uri, json=mock_return_val)
+
+        cli_params = ["influxq"]
+
+        status_record = sp.StatusRecord()
+
+        # invoke cli
+        actual_result = runner.invoke(
+            sp.cli, cli_params, obj=status_record, auto_envvar_prefix="STATUS_PUSHER"
+        )
+
+        # breakpoint()
+        # self.exception.request.__str__()
+
+        print(actual_result.output)
+
+    # assert successful exit code
+    assert actual_result.exit_code == 0
+
+    # assert status record SUCCESS
+    assert status_record.status == sp.Status.SUCCESS
+
+    # assert status value 1.0
+    assert status_record.value == 1.0
+
+    # TODO check our temporary git log file was updated
 
 
 def test_cli():
