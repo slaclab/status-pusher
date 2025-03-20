@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from pydantic.dataclasses import dataclass
+from enum import Enum
+
 import datetime
 import click
 import git
@@ -19,6 +21,13 @@ import timeit
 from typing import Tuple, Optional
 
 
+class Status(Enum):
+    UNKNOWN = "unknown"
+    SUCCESS = "success"
+    FAILED = "failed"
+    DEGRADED = "degraded"
+
+
 @dataclass
 class StatusRecord:
     """
@@ -33,7 +42,7 @@ class StatusRecord:
 
     value: Optional[float] = None
     epoch_ts: datetime.datetime = datetime.datetime.now().astimezone().timestamp()
-    status: str = "UNKNOWN"
+    status: Status = Status.UNKNOWN
 
 
 def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
@@ -290,7 +299,7 @@ def cli(
         logger.debug(f"Data record:\n{pprint.pformat(ctx.obj)}")
 
         report_file = PosixPath(git_dir, filepath)
-        update_log_file(report_file, ctx.obj.epoch_ts, ctx.obj.value, ctx.obj.status)
+        update_log_file(report_file, ctx.obj.epoch_ts, ctx.obj.value, ctx.obj.status.value)
 
         logger.info(f"updated log file: {report_file}")
 
@@ -337,7 +346,7 @@ def promq(ctx, url: str):
     ctx.obj.value = value
 
     # TODO handle success/failure criteria as part of query or... ?
-    ctx.obj.status = "success"
+    ctx.obj.status = Status.SUCCESS
 
 
 @click.option(
@@ -376,7 +385,7 @@ def influxq(ctx, db_name, url):
     ctx.obj.value = value
 
     # TODO handle success/failure criteria as part of query or... ?
-    ctx.obj.status = "success"
+    ctx.obj.status = Status.SUCCESS
 
 
 if __name__ == "__main__":
