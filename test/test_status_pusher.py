@@ -227,7 +227,7 @@ def test_influx_query():
     assert actual == expected
 
 
-def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
+def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkeypatch):
     """
     Test promq() cli command method
     """
@@ -254,18 +254,23 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
         "STATUS_PUSHER_GIT_BRANCH": "main",
     }
     runner = CliRunner()
+
+    # mock prom connect; use our git fixture
     with patch.dict(os.environ, os_environ, clear=True) as mock_env, patch.object(
-        sp.PrometheusConnect, "custom_query", return_value=mock_return_val) as mock_prom_qry:
+        sp.PrometheusConnect, "custom_query", return_value=mock_return_val
+    ) as mock_prom_qry:
 
         cli_params = [
             "promq",
         ]
-        # mock prom connect; mock git (or set up local git repo to clone)
+        # os.environ patch doesn't seem to result in Click picking up our vars
+        # try pytest monkeypatch?
+        for key, val in os_environ.items():
+            monkeypatch.setenv(key, val)
         actual_result = runner.invoke(sp.cli, cli_params)
 
         print(actual_result.output)
         pprint.pprint(mock_prom_qry.mock_calls)
-
 
         # assert expected calls
         assert actual_result.exit_code == 0
