@@ -13,8 +13,11 @@ import os
 from pathlib import PosixPath
 import pprint
 
+
+# test tooling
 import tempfile
 import pytest
+from click.testing import CliRunner
 
 from unittest.mock import MagicMock, patch
 
@@ -172,6 +175,20 @@ def test_prometheus_query():
     Test promtheus_query() function
     """
     # mock prometheus api call
+    mock_return_val = [{"metric": {}, "value": [1729872285.678, "1"]}]
+    mock_query = "avg( avg_over_time(foo{service=`bar`}[5m]))"
+    mock_url = "https://mock.prometheus.url.local"
+
+    with patch.object(
+        sp.PrometheusConnect, "custom_query", return_value=mock_return_val
+    ) as mock_prom:
+        # sp.PrometheusConnect = MagicMock(return_value = mock_return_val)
+        actual = sp.prometheus_query(query=mock_query, prometheus_url=mock_url)
+        # assert mock_prom.called_with(query=mock_query)
+
+    expected = (1729872285.678, 1.0)
+
+    assert actual == expected
 
 
 def test_influxdb_query():
@@ -186,6 +203,12 @@ def test_promq():
     Test promq() cli command method
     """
     # mock prometheus api call
+
+    #    runner = CliRunner()
+    #    result = runner.invoke(sp.cli, ['promq'])
+    #
+    #    check result
+    pass
 
 
 def test_influxq():
