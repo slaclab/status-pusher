@@ -50,19 +50,16 @@ def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
     git_repo.index.add([str(file_path)])
     assert git_repo.index.diff(git_repo.head.commit)[0].a_path == "test_file.txt"
 
-    print("\n################# Debug Output ####################################")
-    print(file_path)
-    print("################# /Debug Output #####################################")
-
     # change but don't add an in-tree file
     in_tree_file_path = repo_path / "file_in_tree.txt"
     with open(in_tree_file_path, "w") as f:
         f.write("Overwritten test content")
 
     # check that changed file is in diffs
-    assert (
-        "test_file.txt" == git_repo.index.diff(git_repo.head.commit.tree)[0].a_blob.name
-    )
+    actual = git_repo.index.diff(git_repo.head.commit.tree)[0].a_blob.name
+    expected = "test_file.txt"
+
+    assert actual == expected
 
 
 def test_git_clone_no_existing_dir(
@@ -80,11 +77,6 @@ def test_git_clone_no_existing_dir(
     repo_path_str = str(repo_path)
     repo_branch_str = "main"
     tmp_path_str = str(clone_path)
-
-    print("\n################# Debug Output ####################################")
-    print(repo_path_str)
-    print(clone_path)
-    print("################# /Debug Output ####################################")
 
     cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
     assert cloned_repo.git_dir.startswith(cloned_repo.working_tree_dir)
