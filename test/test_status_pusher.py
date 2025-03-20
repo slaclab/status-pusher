@@ -20,6 +20,8 @@ import pytest
 from click.testing import CliRunner
 import urllib
 
+# mock and objects to mock out
+import prometheus_api_client
 from unittest.mock import MagicMock, patch
 import requests_mock
 
@@ -250,19 +252,20 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
         "STATUS_PUSHER_FILEPATH": "test_report.log",
         "STATUS_PUSHER_GIT_BRANCH": "main",
     }
+    runner = CliRunner()
     with patch.dict(os.environ, os_environ) as mock_env, patch.object(
-        sp.PrometheusConnect, "custom_query", return_value=mock_return_val
+        prometheus_api_client.PrometheusConnect, "custom_query", return_value=mock_return_val
     ) as mock_prom_qry:
 
-        runner = CliRunner()
         cli_params = [
             "promq",
         ]
         # mock prom connect; mock git (or set up local git repo to clone)
         actual_result = runner.invoke(sp.cli, cli_params)
 
-        print(actual_result)
+        print(actual_result.output)
         pprint.pprint(mock_prom_qry.mock_calls)
+
 
         # assert expected calls
         mock_prom_qry.assert_called_with(query=mock_query)
