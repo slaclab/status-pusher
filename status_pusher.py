@@ -294,13 +294,8 @@ def cli(
     # queries specified by subcommand now are executed, populating ctx.obj:StatusRecord
     # and finally the call_on_close handler below does the commit and push
 
-    # TODO determine if we want this tor un and commit the record even if the subcommand fails.
-    #      The timestamp in that case will be the default created by the StatusRecorfd dataclass,
-    #      and the status will be "Unknown".
-    #
-    # click call_on_close even if subcommand raises exception.  So we need to
-    # maybe define git_commit_and_push() in the main namespace and call it from the subcommands
-    # instead of here.
+    # note that click call_on_close even if subcommand raises an exception, resulting in
+    # in an "Unknown" status being recorded
 
     @ctx.call_on_close
     def git_commit_and_push():
