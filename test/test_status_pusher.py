@@ -260,21 +260,19 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkey
         sp.PrometheusConnect, "custom_query", return_value=mock_return_val
     ) as mock_prom_qry:
 
-        pprint.pprint(os.environ)
-
         # os.environ patch doesn't seem to result in Click picking up our vars
         # try pytest monkeypatch?
         for key, val in os_environ.items():
             monkeypatch.setenv(key, val)
 
-        pprint.pprint(os.environ)
-
         cli_params = [
             "promq",
         ]
 
+        status_record = sp.StatusRecord()
+
         # invoke cli
-        actual_result = runner.invoke(sp.cli, cli_params)
+        actual_result = runner.invoke(sp.cli, cli_params, obj=status_record, auto_envvar_prefix='STATUS_PUSHER')
 
         print(actual_result.output)
         pprint.pprint(mock_prom_qry.mock_calls)
