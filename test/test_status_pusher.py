@@ -247,7 +247,7 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
         "STATUS_PUSHER_GIT_URL": repo_path_str,
         "STATUS_PUSHER_PROMQ_URL": mock_url,
         "STATUS_PUSHER_QUERY": mock_query,
-        "STATUS_PUSHER_FILEPATH": "public/status/test_report.log",
+        "STATUS_PUSHER_FILEPATH": "test_report.log",
         "STATUS_PUSHER_GIT_BRANCH": "main",
     }
     with patch.dict(os.environ, os_environ) as mock_env, patch.object(

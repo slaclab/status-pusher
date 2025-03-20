@@ -34,6 +34,13 @@ def repo_path(tmp_path: PosixPath) -> PosixPath:
         f.write("content of file_not_in_tree.txt")
     # Note we will neither add nor commit this file
 
+    # add a test_report.txt log file in the tree
+    test_report_file_path = tmpdir / "test_report.log"
+    with open(test_report_file_path, "w") as f:
+        f.write("2024-11-23T01:23:40Z, success, 1.0")
+    repo.index.add(test_report_file_path)
+    repo.index.commit("commit test_report.log with 1 entry")
+
     yield PosixPath(repo.working_dir)
 
 
