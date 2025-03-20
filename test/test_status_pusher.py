@@ -59,10 +59,10 @@ def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
     with open(in_tree_file_path, "w") as f:
         f.write("Overwritten test content")
 
-    # TODO fix this - how do we actually get the diff list and/or diffs?
-    # may need to look at gitpython's unit tests - the docs point to them for
-    # apparently undocumented stuff
-    # assert "file_in_tree.txt" in git_repo.index.diff(git_repo.head.commit)
+    # check that changed file is in diffs
+    assert (
+        "test_file.txt" == git_repo.index.diff(git_repo.head.commit.tree)[0].a_blob.name
+    )
 
 
 def test_git_clone_no_existing_dir(
@@ -270,6 +270,7 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
         actual_result = runner.invoke(sp.cli, cli_params)
 
         print(actual_result)
+        pprint.pprint(mock_prom_qry.mock_calls)
 
         # assert expected calls
         mock_prom_qry.assert_called_with(query=mock_query)
