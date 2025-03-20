@@ -184,7 +184,7 @@ def test_prometheus_query():
     ) as mock_prom:
         # sp.PrometheusConnect = MagicMock(return_value = mock_return_val)
         actual = sp.prometheus_query(query=mock_query, prometheus_url=mock_url)
-        # assert mock_prom.called_with(query=mock_query)
+        mock_prom.assert_called_with(query=mock_query)
 
     expected = (1729872285.678, 1.0)
 
