@@ -260,14 +260,7 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkey
         sp.PrometheusConnect, "custom_query", return_value=mock_return_val
     ) as mock_prom_qry:
 
-        # os.environ patch doesn't seem to result in Click picking up our vars
-        # try pytest monkeypatch?
-        for key, val in os_environ.items():
-            monkeypatch.setenv(key, val)
-
-        cli_params = [
-            "promq",
-        ]
+        cli_params = [ "promq" ]
 
         status_record = sp.StatusRecord()
 
@@ -277,14 +270,19 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkey
         print(actual_result.output)
         pprint.pprint(mock_prom_qry.mock_calls)
 
-        # assert expected calls
-        assert actual_result.exit_code == 0
-        mock_prom_qry.assert_called_with(query=mock_query)
+    # assert successful exit code
+    assert actual_result.exit_code == 0
 
-        # TODO check our temporary git log file was updated
+    # assert expected calls
+    mock_prom_qry.assert_called_with(query=mock_query)
 
-    expected_result = "foo?"
-    assert actual_result == expected_result
+    # assert status record SUCCESS
+    assert status_record.status == sp.Status.SUCCESS
+
+    # assert status value 1.0 
+    assert status_record.value == 1.0
+
+    # TODO check our temporary git log file was updated
 
 
 def test_influxq():
