@@ -17,6 +17,7 @@ import pprint
 # test tooling
 import tempfile
 import pytest
+import click
 from click.testing import CliRunner
 import urllib
 
@@ -253,9 +254,8 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
         "STATUS_PUSHER_GIT_BRANCH": "main",
     }
     runner = CliRunner()
-    with patch.dict(os.environ, os_environ) as mock_env, patch.object(
-        prometheus_api_client.PrometheusConnect, "custom_query", return_value=mock_return_val
-    ) as mock_prom_qry:
+    with patch.dict(os.environ, os_environ, clear=True) as mock_env, patch.object(
+        sp.PrometheusConnect, "custom_query", return_value=mock_return_val) as mock_prom_qry:
 
         cli_params = [
             "promq",
@@ -268,6 +268,7 @@ def test_promq(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
 
 
         # assert expected calls
+        assert actual_result.exit_code == 0
         mock_prom_qry.assert_called_with(query=mock_query)
 
         # TODO check our temporary git log file was updated
