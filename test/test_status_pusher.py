@@ -15,28 +15,16 @@ import pprint
 
 
 # test tooling
-import tempfile
 import pytest
-import click
 from click.testing import CliRunner
 import urllib
 
 # mock and objects to mock out
-import prometheus_api_client
 from unittest.mock import MagicMock, patch
 import requests_mock
 
 # module under test
 import status_pusher as sp
-
-#
-TEST_REPO_PATH = "./temp"
-GIT_URL = "https://github.com/slaclab/s3df-status"
-PROMETHEUS_URL = "https://prometheus.slac.stanford.edu"
-QUERY = "avg( avg_over_time(nmap_port_state{service=`ssh`,group=`s3df`}[5m]) )"
-FILEPATH = "public/status/test_report.log"
-GIT_BRANCH = "test_branch"
-GIT_PUSH_URL = "https://$(shell cat $(SECRET_TEMPFILE)/s3df-status-pusher)@github.com/slaclab/s3df-status"
 
 
 def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
@@ -227,9 +215,7 @@ def test_influx_query():
     assert actual == expected
 
 
-def test_promq_cli(
-    git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath, monkeypatch
-):
+def test_promq_cli(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     """
     Test promq() cli command method, mocking the Prometheus custom_query request,
     and using our git repo fixture.
