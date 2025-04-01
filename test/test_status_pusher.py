@@ -193,11 +193,46 @@ def test_commit(git_repo: Repo, repo_path: PosixPath):
     assert actual_latest_commit_msg == expected_latest_commit_msg
 
 
-def test_push():
+@pytest.mark.xfail(reason="need to determine why push test to posix path is failing")
+def test_push(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     """
-    Test push function
+    Test push function by cloning our test repo, committing to it, and pushing the change back.
     """
-    # mock git push call
+    # get a temp dir for the cloned repo
+    clone_path = tmp_path / "cloned_repo"
+
+    # clone the test fixture repo
+
+    repo_path_str = str(repo_path)
+    repo_branch_str = "main"
+    clone_path_str = str(clone_path)
+
+    cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, clone_path_str)
+
+    # now make a change to the cloned repo so we have changes to push to the
+    # original fixture repo
+
+    index = git_repo.index
+    new_file_path = clone_path / "new_file.txt"
+    new_file_content = "content of newly added file in parent repo"
+    new_commit_message = (
+        "Newly committed file in cloned repo to test git push: new_file.txt"
+    )
+    with open(new_file_path, "w") as f:
+        f.write(new_file_content)
+    cloned_repo.index.add(new_file_path)
+    cloned_repo.index.commit(new_commit_message)
+
+    # test call (note that here we push the cloned_repo to a posix path, rather
+    # than, eg a typical github URL, or a special github URL with an auth PAT token)
+    push_result = sp.push(cloned_repo, repo_branch_str, repo_path_str)
+
+    # TODO fix this - the push is failing, though it should be fine to push to a posix path
+
+    # check our *original repo index has the new commit
+    actual_latest_commit_msg = git_repo.git.log().splitlines()[4]
+    expected_latest_commit_msg = "    " + new_commit_message
+    assert actual_latest_commit_msg == expected_latest_commit_msg
 
 
 def test_prometheus_query():
