@@ -100,7 +100,7 @@ def test_git_clone_with_existing_dir_not_a_repo(
 
 
 # TODO complete this
-def test_git_clone_with_existing_repo(
+def test_git_clone_with_existing_repo_dir(
     git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath
 ):
     """
@@ -116,14 +116,30 @@ def test_git_clone_with_existing_repo(
     repo_branch_str = "main"
     tmp_path_str = str(clone_path)
 
-    # first clone the repo normally so it exists
+    # first clone the repo normally so to create a repo directory we can pretend already existed
     cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
 
-    # now make a change to the original test repo so we have changes to pull
-    # TODO
+    # now make a change to the original test repo so we have changes to pull to the
+    # pre-existing (already a clone of the original repo) directory
+    index = git_repo.index
+    new_file_path = repo_path / "new_file.txt"
+    with open(new_file_path, "w") as f:
+        f.write("content of newly added file in parent repo")
+    git_repo.index.add(new_file_path)
+    git_repo.index.commit(
+        "Newly committed file in parent repo to test git pull: new_file.txt"
+    )
 
-    # test that the clone_repo() call appropriately pulls changes
-    # TODO
+    # Now pretend we're calling git_clone for the first time, targeting the existing-repo
+    # directory we created in the fist call; then we can test that the clone_repo() call
+    # appropriately just pulls the new changes
+    recloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
+
+    # check that the new file is really there
+    # git log TODO
+    recloned_repo
+    # read file TODO
+    recloned_repo
 
 
 def test_epoch_to_zulu():

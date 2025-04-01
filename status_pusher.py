@@ -40,7 +40,7 @@ class ConditionComparitor(Enum):
 @dataclass
 class StatusRecord:
     """
-    Status record values.
+    Status record consisting of a value, an epoch timestamp and a status enum.
 
     Note Fettle maps status string vals to Operational Status
     https://github.com/slaclab/s3df-status/blob/main/src/services/hooks/useSystemStatus.tsx#L30
