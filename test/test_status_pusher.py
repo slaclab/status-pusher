@@ -30,15 +30,22 @@ import status_pusher as sp
 def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
     """Test the conftest git repo fixture and its correct usage."""
 
-    # check the fixture's untracked file
+    # add an untracked file not in the tree
+    untracked_file_path = repo_path / "file_not_in_tree.txt"
+    with open(untracked_file_path, "w") as f:
+        f.write("content of file_not_in_tree.txt")
+    # Note we will neither add nor commit this file
+
+    # check the untracked file is reported in untracked_files
     assert "file_not_in_tree.txt" in git_repo.untracked_files
 
     # stage a file without committing it and check it's in the diff
     file_path = repo_path / "test_file.txt"
     with open(file_path, "w") as f:
         f.write("Test content")
-
     git_repo.index.add([str(file_path)])
+
+    # check that uncommitted staged file path shows in diff
     assert git_repo.index.diff(git_repo.head.commit)[0].a_path == "test_file.txt"
 
     # change but don't add an in-tree file
@@ -46,7 +53,7 @@ def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
     with open(in_tree_file_path, "w") as f:
         f.write("Overwritten test content")
 
-    # check that changed file is in diffs
+    # check that changed file is in diff against head tree
     actual = git_repo.index.diff(git_repo.head.commit.tree)[0].a_blob.name
     expected = "test_file.txt"
 
