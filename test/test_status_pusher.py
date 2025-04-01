@@ -200,10 +200,11 @@ def test_commit(git_repo: Repo, repo_path: PosixPath):
     assert actual_latest_commit_msg == expected_latest_commit_msg
 
 
-@pytest.mark.xfail(reason="need to determine why push test to posix path is failing")
+# @pytest.mark.xfail(reason="need to determine why push test to posix path is failing")
 def test_push(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     """
     Test push function by cloning our test repo, committing to it, and pushing the change back.
+    Note this test uses the conftest fixture repo `git_repo` as the *remote* we clone and push to.
     """
     # get a temp dir for the cloned repo
     clone_path = tmp_path / "cloned_repo"
@@ -216,10 +217,20 @@ def test_push(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
 
     cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, clone_path_str)
 
+    # if we leave `main` checked out in the git_repo we're treating as a remote to push to, we
+    # get the error,
+    # remote: error: refusing to update checked out branch: refs/heads/main
+    # remote: error: By default, updating the current branch in a non-bare repository
+    # remote: is denied, because it will make the index and work tree inconsistent
+    # remote: with what you pushed, and will require 'git reset --hard' to match
+    # remote: the work tree to HEAD.
+    # To avoid this, we must create and checkout a temporary branch (and note we need not worry
+    # about cleaning up or resetting it, since it is a function-scoped test fixture)
+    git_repo.git.checkout("-b", "temp_branch")
+
     # now make a change to the cloned repo so we have changes to push to the
     # original fixture repo
 
-    index = git_repo.index
     new_file_path = clone_path / "new_file.txt"
     new_file_content = "content of newly added file in parent repo"
     new_commit_message = (
@@ -234,9 +245,9 @@ def test_push(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     # than, eg a typical github URL, or a special github URL with an auth PAT token)
     push_result = sp.push(cloned_repo, repo_branch_str, repo_path_str)
 
-    # TODO fix this - the push is failing, though it should be fine to push to a posix path
-
     # check our *original repo index has the new commit
+    # remember we're on 'temp_branch' - we need to switch back to 'main'
+    git_repo.git.checkout("main")
     actual_latest_commit_msg = git_repo.git.log().splitlines()[4]
     expected_latest_commit_msg = "    " + new_commit_message
     assert actual_latest_commit_msg == expected_latest_commit_msg
