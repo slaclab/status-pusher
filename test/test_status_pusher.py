@@ -53,6 +53,9 @@ def test_conftest_fixtures(git_repo: Repo, repo_path: PosixPath):
     assert actual == expected
 
 
+### Function unit tests ###
+
+
 def test_git_clone_no_existing_dir(
     git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath
 ):
@@ -99,7 +102,6 @@ def test_git_clone_with_existing_dir_not_a_repo(
         cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
 
 
-# TODO complete this
 def test_git_clone_with_existing_repo_dir(
     git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath
 ):
@@ -114,32 +116,40 @@ def test_git_clone_with_existing_repo_dir(
 
     repo_path_str = str(repo_path)
     repo_branch_str = "main"
-    tmp_path_str = str(clone_path)
+    clone_path_str = str(clone_path)
 
     # first clone the repo normally so to create a repo directory we can pretend already existed
-    cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
+    cloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, clone_path_str)
 
     # now make a change to the original test repo so we have changes to pull to the
     # pre-existing (already a clone of the original repo) directory
     index = git_repo.index
     new_file_path = repo_path / "new_file.txt"
-    with open(new_file_path, "w") as f:
-        f.write("content of newly added file in parent repo")
-    git_repo.index.add(new_file_path)
-    git_repo.index.commit(
+    new_file_content = "content of newly added file in parent repo"
+    new_commit_message = (
         "Newly committed file in parent repo to test git pull: new_file.txt"
     )
+    with open(new_file_path, "w") as f:
+        f.write(new_file_content)
+    git_repo.index.add(new_file_path)
+    git_repo.index.commit(new_commit_message)
 
     # Now pretend we're calling git_clone for the first time, targeting the existing-repo
     # directory we created in the fist call; then we can test that the clone_repo() call
     # appropriately just pulls the new changes
-    recloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, tmp_path_str)
+    recloned_repo: Repo = sp.git_clone(repo_path_str, repo_branch_str, clone_path_str)
 
     # check that the new file is really there
-    # git log TODO
-    recloned_repo
-    # read file TODO
-    recloned_repo
+    # check git log for our message committing the new file
+    actual_latest_commit_msg = recloned_repo.git.log().splitlines()[4]
+    expected_latest_commit_msg = "    " + new_commit_message
+    assert actual_latest_commit_msg == expected_latest_commit_msg
+
+    # read new file content
+    with open(clone_path / "new_file.txt", "r") as f:
+        actual_new_file_content = f.read()
+    expected_new_file_content = new_file_content
+    assert actual_new_file_content == expected_new_file_content
 
 
 def test_epoch_to_zulu():
@@ -158,10 +168,29 @@ def test_update_log_file():
     """
 
 
-def test_commit():
+def test_commit(git_repo: Repo, repo_path: PosixPath):
     """
     Test commit function
     """
+    """
+    Test git_commit function by commiting a new file to the test repo fixture.
+    """
+    git_branch = "main"
+    test_commit_message = "unit-test commit message"
+
+    new_file_path = repo_path / "new_file.txt"
+
+    new_file_content = "content of newly added file in parent repo"
+    with open(new_file_path, "w") as f:
+        f.write(new_file_content)
+
+    # test call
+    sp.commit(git_repo, git_branch, new_file_path, test_commit_message)
+
+    # check for the expected new commit message in the log
+    actual_latest_commit_msg = git_repo.git.log().splitlines()[4]
+    expected_latest_commit_msg = "    " + test_commit_message
+    assert actual_latest_commit_msg == expected_latest_commit_msg
 
 
 def test_push():
@@ -229,6 +258,9 @@ def test_influx_query():
     expected = (1738379494.0, 1)
 
     assert actual == expected
+
+
+#### End-to-end CLI invocation tests ###
 
 
 def test_promq_cli(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
@@ -371,10 +403,3 @@ def test_influxq_cli(
     assert status_record.value == 1.0
 
     # TODO check our temporary git log file was updated
-
-
-def test_cli():
-    """
-    Test cli function
-    """
-    # mock git pull, push, prometheus api or influxdb call
