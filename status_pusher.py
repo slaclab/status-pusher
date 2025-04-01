@@ -231,6 +231,22 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
 @click.group()
 @click.option("--query", required=True, help="query to gather metrics with")
 @click.option(
+    "--success-condition",
+    #    required=True,
+    help="Comparison operator to determine success."
+    "Metric value produced by query will be compared with the value provided by --success-value"
+    "to determine success vs failure.",
+    type=click.Choice(ConditionComparitor.__members__),
+)
+@click.option(
+    "--success-value",
+    #    required=True,
+    help="Value with which to compare query metric result to determine success."
+    "Metric value produced by query will be compared this value using the comparitor operator"
+    "provided with --success-condition",
+    type=float,
+)
+@click.option(
     "--filepath",
     required=True,
     help="filepath to append measurements to relative to root of git repo directory",
@@ -264,12 +280,16 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     "--git-push-url",
     default=None,
     show_default=True,
-    help="URL to push to remote after commiting results. If not provided, updates will still be committed locally, but they will not be pushed to the remote.",
+    help="URL to push to remote after commiting results."
+    "If not provided, updates will still be committed locally, but they will not be pushed"
+    "to the remote.",
 )
 @click.pass_context
 def cli(
     ctx,
     query: str,
+    success_condition: ConditionComparitor,
+    success_value: float,
     git_url: str,
     git_branch: str,
     git_dir: str,
