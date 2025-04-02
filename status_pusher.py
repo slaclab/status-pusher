@@ -233,18 +233,22 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
 @click.option(
     "--success-condition",
     #    required=True,
-    help="Comparison operator to determine success."
-    "Metric value produced by query will be compared with the value provided by --success-value"
+    help="Comparison operator to determine success.\n"
+    "Metric value produced by query will be compared with the value provided by --success-value\n"
     "to determine success vs failure.",
     type=click.Choice(ConditionComparitor.__members__),
+    default=ConditionComparitor.eq.name,
+    show_default=True,
 )
 @click.option(
     "--success-value",
     #    required=True,
-    help="Value with which to compare query metric result to determine success."
-    "Metric value produced by query will be compared this value using the comparitor operator"
+    help="Value with which to compare query metric result to determine success.\n"
+    "Metric value produced by query will be compared this value using the comparitor operator\n"
     "provided with --success-condition",
     type=float,
+    default=1,
+    show_default=True,
 )
 @click.option(
     "--filepath",
@@ -297,7 +301,7 @@ def cli(
     verbose: bool,
     git_push_url: str,
 ) -> bool:
-    """Queries a metrics source and updates a status file in git"""
+    """Queries a metrics source, evaluates success criterion, and updates a status file in git"""
 
     # ensure we got a StatusRecord object in case we were invoked outside __main__
     ctx.ensure_object(StatusRecord)
@@ -318,14 +322,32 @@ def cli(
     # in an "Unknown" status being recorded
 
     @ctx.call_on_close
-    def git_commit_and_push():
+    def eval_success_git_commit_and_push():
+        logger.debug(
+            f"evaluating success condition:\n"
+            f"success_condition: {success_condition}\n"
+            f"ctx.obj.value: {ctx.obj.value}\n"
+            f"success_value: {success_value}\n"
+        )
+
+        # handle success/failure criteria
+        ctx.obj.status = (
+            Status.SUCCESS
+            if ConditionComparitor[success_condition].value(
+                ctx.obj.value, success_value
+            )
+            else Status.FAILED
+        )
+        logger.debug(
+            f"Computed {ConditionComparitor[success_condition].value}({ctx.obj.value}, {success_value})"
+            f" == {ctx.obj.status}"
+        )
+
         logger.debug(f"writing report file at {filepath}")
         logger.debug(f"Data record:\n{pprint.pformat(ctx.obj)}")
 
         report_file = PosixPath(git_dir, filepath)
-        update_log_file(
-            report_file, ctx.obj.epoch_ts, ctx.obj.value, ctx.obj.status.value
-        )
+        update_log_file(report_file, ctx.obj.epoch_ts, ctx.obj.value, ctx.obj.status)
 
         logger.info(f"updated log file: {report_file}")
 
@@ -354,7 +376,7 @@ def cli(
 def promq(ctx, url: str):
     """
     Prometheus query command wrapped to do pre and post git actions.
-    Performs checkout, pull, prometheus_query, commit, push.
+    Performs checkout, pull, prometheus_query, success condition evaluation, log result, commit, push.
     """
     logger.debug(
         f"promq command called with parent params {ctx.parent.params} and command params {ctx.params}"
@@ -370,9 +392,6 @@ def promq(ctx, url: str):
     # populate context object for cli handler to access
     ctx.obj.epoch_ts = epoch_ts
     ctx.obj.value = value
-
-    # TODO handle success/failure criteria as part of query or... ?
-    ctx.obj.status = Status.SUCCESS
 
 
 @click.option(
@@ -392,7 +411,7 @@ def promq(ctx, url: str):
 def influxq(ctx, db_name, url):
     """
     InfluxDB query command wrapped to do pre and post git actions.
-    Performs checkout, pull, prometheus_query, commit, push.
+    Performs checkout, pull, prometheus_query, success condition evaluation, log result, commit, push.
     """
     logger.debug(
         f"influxq command called with parent cli params {pprint.pformat(ctx.parent.params)} and command params {pprint.pformat(ctx.params)}"
@@ -409,9 +428,6 @@ def influxq(ctx, db_name, url):
     # populate context object for cli handler to access
     ctx.obj.epoch_ts = epoch_ts
     ctx.obj.value = value
-
-    # TODO handle success/failure criteria as part of query or... ?
-    ctx.obj.status = Status.SUCCESS
 
 
 if __name__ == "__main__":
