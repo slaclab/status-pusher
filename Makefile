@@ -21,7 +21,7 @@ pytest-debug:
  
 pytest:
 	echo "running pytest with coverage (no console output)"
-	./.venv/bin/pytest --cov=status_pusher --cov-report term-missing ./ 
+	./.venv/bin/pytest -v --cov=status_pusher --cov-report term-missing ./ 
 
 secrets:
 	mkdir -p ./.secrets
