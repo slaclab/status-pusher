@@ -205,6 +205,7 @@ def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
 
 def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, float]:
     """query influx using http api"""
+    qry_timeout = 15
     path = "/query?"
     url_qry_path = influx_url + path
 
@@ -216,7 +217,7 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     url_params = {"q": query, "db": db_name}
 
     logger.debug(f"querying {url_qry_path} with db_name: {db_name}, query: {query}")
-    response = requests.get(url_qry_path, params=url_params, timeout=10)
+    response = requests.get(url_qry_path, params=url_params, timeout=qry_timeout)
 
     # raise an HTTPError exception if call failed
     response.raise_for_status()
