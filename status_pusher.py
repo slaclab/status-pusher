@@ -320,7 +320,7 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     default=None,
     show_default=True,
     help="URL to push to remote after commiting results."
-    "If not provided, updates will still be committed locally, but they will not be pushed"
+    "If not provided, updates will still be committed locally, but they will not be pushed "
     "to the remote.",
 )
 @click.pass_context
