@@ -8,6 +8,9 @@ CONTAINER_REGISTRY ?= localhost
 
 default: pytest
 
+lint:
+	pylint status_pusher.py
+
 debug: pytest-debug test_promq test_influxdb
 
 coverage_html:
