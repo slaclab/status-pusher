@@ -114,6 +114,7 @@ def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
 
 
 def epoch_to_zulu(ts: float) -> str:
+    """Convert an epoch float to a zulu datetime in ISO format"""
     dt = datetime.datetime.fromtimestamp(ts, datetime.timezone.utc)
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -149,6 +150,10 @@ def commit(
 
 
 def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushInfo:
+    """
+    Pull from remote, then push changes in a local git repo to remote.
+    NOTE: git_branch is NOT implemented, and the current local branch will always be used.
+    """
     # we can just use the gitcmd (git_repo.git) directly for everything if we want, if it's easier,
     # but we must do so for things that aren't wrapped
     gitcmd = git_repo.git
@@ -157,13 +162,14 @@ def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushIn
         gitcmd.remote("add", "push_origin", git_push_url)
     origin = git_repo.remotes.origin
 
-    # TODO check out desired branch prior to pushing
-    # TODO set up remote tracking branch if it doesn't already exist
+    # TODO
+    # - check out desired branch prior to pushing
+    #  - set up remote tracking branch if it doesn't already exist
+    # - retry if fails eg due to race condition push interleaved from another checker instance
     if git_branch != "main":
         raise NotImplementedError(
             "commit method currently always uses the default branch"
         )
-    # TODO retry if fails eg due to race condition push interleaved from another checker instance
     push_origin = git_repo.remotes.push_origin
 
     # always pull before push
@@ -176,7 +182,7 @@ def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushIn
     push_origin_urls = list(git_repo.remotes.origin.urls)
     logger.debug(f"{push_origin} has urls {push_origin_urls}")
 
-    logger.debug(f"pushing to push_origin <REDACTED URL CONTAINING TOKEN>")
+    logger.debug("pushing to push_origin <REDACTED URL CONTAINING TOKEN>")
     push_res: git.remote.PushInfo = push_origin.push()
 
     return push_res
@@ -391,7 +397,7 @@ def cli(
             push_res = push(git_repo, git_branch, git_push_url)
             logger.info(f"push result: {push_res}")
         else:
-            logger.info(f"Will not push because git_push_url == False")
+            logger.info("Will not push because git_push_url == False")
 
 
 @click.option(
