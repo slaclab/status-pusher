@@ -216,7 +216,7 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     url_params = {"q": query, "db": db_name}
 
     logger.debug(f"querying {url_qry_path} with db_name: {db_name}, query: {query}")
-    response = requests.get(url_qry_path, params=url_params)
+    response = requests.get(url_qry_path, params=url_params, timeout=10)
 
     # raise an HTTPError exception if call failed
     response.raise_for_status()
