@@ -15,10 +15,7 @@ import pprint
 from prometheus_api_client import PrometheusConnect
 import os
 import requests
-import shutil
 import tempfile
-import time
-import timeit
 from typing import Tuple, Optional
 
 

@@ -4,7 +4,6 @@ requests
 GitPython
 click
 loguru
-# influxdb_client
 #################
 # dev reqs follow
 #################
