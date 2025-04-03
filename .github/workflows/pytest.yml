@@ -1,0 +1,17 @@
+name: Makefile CI
+on:
+  push:
+    branches: ["main", "release", "dev"]
+  pull_request:
+    branches: ["main", "release"]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          make venv
+          make pip
+      - name: Run pytests
+        run: make pytest
