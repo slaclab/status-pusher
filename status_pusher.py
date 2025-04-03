@@ -1,25 +1,35 @@
 #!/usr/bin/env python3
+"""
+status_pusher.py
 
-from pydantic.dataclasses import dataclass
+cli utility to make status checks, eg against prometheus and influxdb; commit the result to
+a log file in a repo, and push the changeset upstream to a repo checked by a Fettle dashboard.
+"""
+
+# standard imports
+import datetime
 from enum import Enum
 import operator
+import os
+from pathlib import PosixPath
+import pprint
+from typing import Tuple, Optional
 
-import datetime
+# 3rd party imports
+import requests
+from pydantic.dataclasses import dataclass
 import click
 import git
 
-# from influxdb_client import InfluxDBClient
 from loguru import logger
-from pathlib import PosixPath
-import pprint
 from prometheus_api_client import PrometheusConnect
-import os
-import requests
-import tempfile
-from typing import Tuple, Optional
 
 
 class Status(Enum):
+    """
+    Status string enum for use in StatusRecord; as expected by frontend Fettle UI
+    """
+
     UNKNOWN = "unknown"
     SUCCESS = "success"
     FAILED = "failed"
@@ -27,6 +37,11 @@ class Status(Enum):
 
 
 class ConditionComparitor(Enum):
+    """
+    Comparison Operator to be specified as a CLI option along with condition value (float)
+    that will be used to evaluate success/failure criteria.
+    """
+
     eq = operator.eq
     lt = operator.lt
     lte = operator.le
@@ -61,7 +76,7 @@ def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
     if os.path.isdir(git_dir):
         # Pull to be sure we're up to date
         logger.debug(f"found existing directory {git_dir}")
-        logger.debug(f"checking that existing directory is a valid repo")
+        logger.debug("checking that existing directory is a valid repo")
 
         git_repo = git.Repo(git_dir)
         logger.debug(f"loaded existing git repo {git_repo}")
@@ -74,14 +89,13 @@ def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
 
         logger.debug(f"pulling from origin {origin} with depth {depth}")
 
-        # TODO implement git_branch option
-        # TODO handle branch that doesn't exist yet on remote
-
-        # TODO we need to handle the case that an existing dir has a different branch checked out -
-        # ie, always do a checkout of the specified branch.
-
-        # TODO we should separate the pull/checkout logic from the git_clone function for clarity
-        # as git clone normally doesn't do either for an existing local repo
+        # TODO
+        # - implement git_branch option
+        # - handle branch that doesn't exist yet on remote
+        # - we need to handle the case that an existing dir has a different branch checked
+        #   out - ie, always do a checkout of the specified branch.
+        # - we should separate the pull/checkout logic from the git_clone function for clarity
+        #   as git clone normally doesn't do either for an existing local repo
         origin.pull(depth=depth)
 
         git_repo = git.Repo(git_dir)
@@ -145,6 +159,10 @@ def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushIn
 
     # TODO check out desired branch prior to pushing
     # TODO set up remote tracking branch if it doesn't already exist
+    if git_branch != "main":
+        raise NotImplementedError(
+            "commit method currently always uses the default branch"
+        )
     # TODO retry if fails eg due to race condition push interleaved from another checker instance
     push_origin = git_repo.remotes.push_origin
 
@@ -153,7 +171,7 @@ def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushIn
     logger.debug(f"{origin} has urls {origin_urls}")
 
     logger.debug(f"pulling from origin {origin}")
-    pull_res: git.remote.FetchInfo = origin.pull()
+    _pull_res: git.remote.FetchInfo = origin.pull()
 
     push_origin_urls = list(git_repo.remotes.origin.urls)
     logger.debug(f"{push_origin} has urls {push_origin_urls}")
@@ -198,7 +216,20 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     response.raise_for_status()
 
     # expected query output like:
-    # {"results":[{"statement_id":0,"series":[{"name":"squeue","columns":["time","last"],"values":[["2025-02-01T03:11:34Z",1]]}]}]}
+    #   {
+    #       "results": [
+    #           {
+    #               "statement_id": 0,
+    #               "series": [
+    #                   {
+    #                       "name": "squeue",
+    #                       "columns": ["time", "last"],
+    #                       "values": [["2025-02-01T03:11:34Z", 1]],
+    #                   }
+    #               ],
+    #           }
+    #       ]
+    #   }
 
     logger.debug(f"got response {response}")
 
@@ -336,7 +367,8 @@ def cli(
             else Status.FAILED
         )
         logger.debug(
-            f"Computed {ConditionComparitor[success_condition].value}({ctx.obj.value}, {success_value})"
+            f"Computed {ConditionComparitor[success_condition].value}"
+            f"({ctx.obj.value}, {success_value})"
             f" == {ctx.obj.status}"
         )
 
@@ -373,10 +405,12 @@ def cli(
 def promq(ctx, url: str):
     """
     Prometheus query command wrapped to do pre and post git actions.
-    Performs checkout, pull, prometheus_query, success condition evaluation, log result, commit, push.
+    Performs checkout, pull, prometheus_query, success condition evaluation, log result,
+    commit, push.
     """
     logger.debug(
-        f"promq command called with parent params {ctx.parent.params} and command params {ctx.params}"
+        f"promq command called with parent params {ctx.parent.params} "
+        f"and command params {ctx.params}"
     )
 
     prom_url = ctx.params["url"]
@@ -408,10 +442,12 @@ def promq(ctx, url: str):
 def influxq(ctx, db_name, url):
     """
     InfluxDB query command wrapped to do pre and post git actions.
-    Performs checkout, pull, prometheus_query, success condition evaluation, log result, commit, push.
+    Performs checkout, pull, prometheus_query, success condition evaluation, log result,
+    commit, push.
     """
     logger.debug(
-        f"influxq command called with parent cli params {pprint.pformat(ctx.parent.params)} and command params {pprint.pformat(ctx.params)}"
+        f"influxq command called with parent cli params {pprint.pformat(ctx.parent.params)} "
+        f"and command params {pprint.pformat(ctx.params)}"
     )
 
     influxdb_db_name = ctx.params["db_name"]
