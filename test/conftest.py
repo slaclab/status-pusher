@@ -19,7 +19,7 @@ def repo_path(tmp_path: PosixPath) -> PosixPath:
     """
     tmpdir = tmp_path / "status_pusher_test_repo"
 
-    repo = Repo.init(tmpdir)
+    repo = Repo.init(tmpdir, b="main")
 
     # add a file in the tree
     intree_file_path = tmpdir / "file_in_tree.txt"
