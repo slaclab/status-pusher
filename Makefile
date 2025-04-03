@@ -8,6 +8,9 @@ CONTAINER_REGISTRY ?= localhost
 
 default: pytest
 
+lint:
+	pylint status_pusher.py
+
 debug: pytest-debug test_promq test_influxdb
 
 coverage_html:
@@ -21,7 +24,7 @@ pytest-debug:
  
 pytest:
 	echo "running pytest with coverage (no console output)"
-	./.venv/bin/pytest --cov=status_pusher --cov-report term-missing ./ 
+	./.venv/bin/pytest -v --cov=status_pusher --cov-report term-missing ./ 
 
 secrets:
 	mkdir -p ./.secrets
@@ -88,8 +91,8 @@ test_influxdb::
 	echo "Running Live (read-only) test against real Prometheus server and repo on github.com"
 	STATUS_PUSHER_GIT_URL='https://github.com/slaclab/s3df-status' \
 	STATUS_PUSHER_INFLUXQ_URL='https://influxdb.slac.stanford.edu' \
-	STATUS_PUSHER_INFLUXQ_DB_NAME='slurm' \
-	STATUS_PUSHER_QUERY='SELECT last("jobs") FROM "squeue" LIMIT 1' \
+	STATUS_PUSHER_INFLUXQ_DB_NAME='telegraf' \
+	STATUS_PUSHER_QUERY="SELECT mean(\"status_code\") FROM \"monit_process\" WHERE (\"service\" = 'slurmctld' OR \"service\" = 'slurmdbd') AND time > now()-5m GROUP BY \"service\" ;" \
 	STATUS_PUSHER_FILEPATH=public/status/test_report.log \
 	STATUS_PUSHER_GIT_BRANCH='main' \
 	./.venv/bin/python3 status_pusher.py influxq

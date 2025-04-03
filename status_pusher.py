@@ -1,28 +1,58 @@
 #!/usr/bin/env python3
+"""
+status_pusher.py
 
-from dataclasses import dataclass
+cli utility to make status checks, eg against prometheus and influxdb; commit the result to
+a log file in a repo, and push the changeset upstream to a repo checked by a Fettle dashboard.
+"""
+
+# standard imports
 import datetime
+from enum import Enum
+import operator
+import os
+from pathlib import PosixPath
+import pprint
+from typing import Tuple, Optional
+
+# 3rd party imports
+import requests
+from pydantic.dataclasses import dataclass
 import click
 import git
 
-# from influxdb_client import InfluxDBClient
 from loguru import logger
-from pathlib import PosixPath
-import pprint
 from prometheus_api_client import PrometheusConnect
-import os
-import requests
-import shutil
-import tempfile
-import time
-import timeit
-from typing import Tuple, Optional
+
+
+class Status(Enum):
+    """
+    Status string enum for use in StatusRecord; as expected by frontend Fettle UI
+    """
+
+    UNKNOWN = "unknown"
+    SUCCESS = "success"
+    FAILED = "failed"
+    DEGRADED = "degraded"
+
+
+class ConditionComparitor(Enum):
+    """
+    Comparison Operator to be specified as a CLI option along with condition value (float)
+    that will be used to evaluate success/failure criteria.
+    """
+
+    eq = operator.eq
+    lt = operator.lt
+    lte = operator.le
+    gt = operator.gt
+    gte = operator.ge
 
 
 @dataclass
 class StatusRecord:
     """
-    Status record values.
+    Status record consisting of a value, an epoch timestamp and a status enum.
 
     Note Fettle maps status string vals to Operational Status
     https://github.com/slaclab/s3df-status/blob/main/src/services/hooks/useSystemStatus.tsx#L30
@@ -33,7 +63,7 @@ class StatusRecord:
 
     value: Optional[float] = None
     epoch_ts: datetime.datetime = datetime.datetime.now().astimezone().timestamp()
-    status: str = "UNKNOWN"
+    status: Status = Status.UNKNOWN
 
 
 def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
@@ -46,7 +76,7 @@ def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
     if os.path.isdir(git_dir):
         # Pull to be sure we're up to date
         logger.debug(f"found existing directory {git_dir}")
-        logger.debug(f"checking that existing directory is a valid repo")
+        logger.debug("checking that existing directory is a valid repo")
 
         git_repo = git.Repo(git_dir)
         logger.debug(f"loaded existing git repo {git_repo}")
@@ -59,14 +89,13 @@ def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
 
         logger.debug(f"pulling from origin {origin} with depth {depth}")
 
-        # TODO implement git_branch option
-        # TODO handle branch that doesn't exist yet on remote
-
-        # TODO we need to handle the case that an existing dir has a different branch checked out -
-        # ie, always do a checkout of the specified branch.
-
-        # TODO we should separate the pull/checkout logic from the git_clone function for clarity
-        # as git clone normally doesn't do either for an existing local repo
+        # TODO
+        # - implement git_branch option
+        # - handle branch that doesn't exist yet on remote
+        # - we need to handle the case that an existing dir has a different branch checked
+        #   out - ie, always do a checkout of the specified branch.
+        # - we should separate the pull/checkout logic from the git_clone function for clarity
+        #   as git clone normally doesn't do either for an existing local repo
         origin.pull(depth=depth)
 
         git_repo = git.Repo(git_dir)
@@ -85,6 +114,7 @@ def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
 
 
 def epoch_to_zulu(ts: float) -> str:
+    """Convert an epoch float to a zulu datetime in ISO format"""
     dt = datetime.datetime.fromtimestamp(ts, datetime.timezone.utc)
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -120,6 +150,10 @@ def commit(
 
 
 def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushInfo:
+    """
+    Pull from remote, then push changes in a local git repo to remote.
+    NOTE: git_branch is NOT implemented, and the current local branch will always be used.
+    """
     # we can just use the gitcmd (git_repo.git) directly for everything if we want, if it's easier,
     # but we must do so for things that aren't wrapped
     gitcmd = git_repo.git
@@ -128,9 +162,14 @@ def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushIn
         gitcmd.remote("add", "push_origin", git_push_url)
     origin = git_repo.remotes.origin
 
-    # TODO check out desired branch prior to pushing
-    # TODO set up remote tracking branch if it doesn't already exist
-    # TODO retry if fails eg due to race condition push interleaved from another checker instance
+    # TODO
+    # - check out desired branch prior to pushing
+    #  - set up remote tracking branch if it doesn't already exist
+    # - retry if fails eg due to race condition push interleaved from another checker instance
+    if git_branch != "main":
+        raise NotImplementedError(
+            "commit method currently always uses the default branch"
+        )
     push_origin = git_repo.remotes.push_origin
 
     # always pull before push
@@ -138,12 +177,12 @@ def push(git_repo: git.Repo, git_branch: str, git_push_url) -> git.remote.PushIn
     logger.debug(f"{origin} has urls {origin_urls}")
 
     logger.debug(f"pulling from origin {origin}")
-    pull_res: git.remote.FetchInfo = origin.pull()
+    _pull_res: git.remote.FetchInfo = origin.pull()
 
     push_origin_urls = list(git_repo.remotes.origin.urls)
     logger.debug(f"{push_origin} has urls {push_origin_urls}")
 
-    logger.debug(f"pushing to push_origin <REDACTED URL CONTAINING TOKEN>")
+    logger.debug("pushing to push_origin <REDACTED URL CONTAINING TOKEN>")
     push_res: git.remote.PushInfo = push_origin.push()
 
     return push_res
@@ -166,6 +205,7 @@ def prometheus_query(query: str, prometheus_url: str) -> Tuple[float, float]:
 
 def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, float]:
     """query influx using http api"""
+    qry_timeout = 15
     path = "/query?"
     url_qry_path = influx_url + path
 
@@ -177,13 +217,26 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     url_params = {"q": query, "db": db_name}
 
     logger.debug(f"querying {url_qry_path} with db_name: {db_name}, query: {query}")
-    response = requests.get(url_qry_path, params=url_params)
+    response = requests.get(url_qry_path, params=url_params, timeout=qry_timeout)
 
     # raise an HTTPError exception if call failed
     response.raise_for_status()
 
     # expected query output like:
-    # {"results":[{"statement_id":0,"series":[{"name":"squeue","columns":["time","last"],"values":[["2025-02-01T03:11:34Z",1]]}]}]}
+    #   {
+    #       "results": [
+    #           {
+    #               "statement_id": 0,
+    #               "series": [
+    #                   {
+    #                       "name": "squeue",
+    #                       "columns": ["time", "last"],
+    #                       "values": [["2025-02-01T03:11:34Z", 1]],
+    #                   }
+    #               ],
+    #           }
+    #       ]
+    #   }
 
     logger.debug(f"got response {response}")
 
@@ -201,9 +254,6 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     assert len(data["results"]) == 1
 
     (epoch_ts, value) = (
-        # TODO maybe make zulu_to_epoch function for isoformat handling
-        #      Actually, we don't want the ts from the qry response, but the ts of the test
-        #      running it, which is the default val
         datetime.datetime.fromisoformat(
             data["results"][0]["series"][0]["values"][0][0]
         ).timestamp(),
@@ -215,6 +265,26 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
 
 @click.group()
 @click.option("--query", required=True, help="query to gather metrics with")
+@click.option(
+    "--success-condition",
+    #    required=True,
+    help="Comparison operator to determine success.\n"
+    "Metric value produced by query will be compared with the value provided by --success-value\n"
+    "to determine success vs failure.",
+    type=click.Choice(ConditionComparitor.__members__),
+    default=ConditionComparitor.eq.name,
+    show_default=True,
+)
+@click.option(
+    "--success-value",
+    #    required=True,
+    help="Value with which to compare query metric result to determine success.\n"
+    "Metric value produced by query will be compared this value using the comparitor operator\n"
+    "provided with --success-condition",
+    type=float,
+    default=1,
+    show_default=True,
+)
 @click.option(
     "--filepath",
     required=True,
@@ -249,12 +319,16 @@ def influx_query(db_name: str, influx_url: str, query: str) -> Tuple[float, floa
     "--git-push-url",
     default=None,
     show_default=True,
-    help="URL to push to remote after commiting results. If not provided, updates will still be committed locally, but they will not be pushed to the remote.",
+    help="URL to push to remote after commiting results."
+    "If not provided, updates will still be committed locally, but they will not be pushed "
+    "to the remote.",
 )
 @click.pass_context
 def cli(
     ctx,
     query: str,
+    success_condition: ConditionComparitor,
+    success_value: float,
     git_url: str,
     git_branch: str,
     git_dir: str,
@@ -262,7 +336,7 @@ def cli(
     verbose: bool,
     git_push_url: str,
 ) -> bool:
-    """Queries a metrics source and updates a status file in git"""
+    """Queries a metrics source, evaluates success criterion, and updates a status file in git"""
 
     # ensure we got a StatusRecord object in case we were invoked outside __main__
     ctx.ensure_object(StatusRecord)
@@ -279,16 +353,32 @@ def cli(
     # queries specified by subcommand now are executed, populating ctx.obj:StatusRecord
     # and finally the call_on_close handler below does the commit and push
 
-    # TODO determine if we want this tor un and commit the record even if the subcommand fails.
-    #      The timestamp in that case will be the default created by the StatusRecorfd dataclass,
-    #      and the status will be "Unknown".
-    #
-    # click call_on_close even if subcommand raises exception.  So we need to
-    # maybe define git_commit_and_push() in the main namespace and call it from the subcommands
-    # instead of here.
+    # note that click call_on_close even if subcommand raises an exception, resulting in
+    # in an "Unknown" status being recorded
 
     @ctx.call_on_close
-    def git_commit_and_push():
+    def eval_success_git_commit_and_push():
+        logger.debug(
+            f"evaluating success condition:\n"
+            f"success_condition: {success_condition}\n"
+            f"ctx.obj.value: {ctx.obj.value}\n"
+            f"success_value: {success_value}\n"
+        )
+
+        # handle success/failure criteria
+        ctx.obj.status = (
+            Status.SUCCESS
+            if ConditionComparitor[success_condition].value(
+                ctx.obj.value, success_value
+            )
+            else Status.FAILED
+        )
+        logger.debug(
+            f"Computed {ConditionComparitor[success_condition].value}"
+            f"({ctx.obj.value}, {success_value})"
+            f" == {ctx.obj.status}"
+        )
+
         logger.debug(f"writing report file at {filepath}")
         logger.debug(f"Data record:\n{pprint.pformat(ctx.obj)}")
 
@@ -308,7 +398,7 @@ def cli(
             push_res = push(git_repo, git_branch, git_push_url)
             logger.info(f"push result: {push_res}")
         else:
-            logger.info(f"Will not push because git_push_url == False")
+            logger.info("Will not push because git_push_url == False")
 
 
 @click.option(
@@ -322,10 +412,12 @@ def cli(
 def promq(ctx, url: str):
     """
     Prometheus query command wrapped to do pre and post git actions.
-    Performs checkout, pull, prometheus_query, commit, push.
+    Performs checkout, pull, prometheus_query, success condition evaluation, log result,
+    commit, push.
     """
     logger.debug(
-        f"promq command called with parent params {ctx.parent.params} and command params {ctx.params}"
+        f"promq command called with parent params {ctx.parent.params} "
+        f"and command params {ctx.params}"
     )
 
     prom_url = ctx.params["url"]
@@ -338,9 +430,6 @@ def promq(ctx, url: str):
     # populate context object for cli handler to access
     ctx.obj.epoch_ts = epoch_ts
     ctx.obj.value = value
-
-    # TODO handle success/failure criteria as part of query or... ?
-    ctx.obj.status = "success"
 
 
 @click.option(
@@ -360,10 +449,12 @@ def promq(ctx, url: str):
 def influxq(ctx, db_name, url):
     """
     InfluxDB query command wrapped to do pre and post git actions.
-    Performs checkout, pull, prometheus_query, commit, push.
+    Performs checkout, pull, prometheus_query, success condition evaluation, log result,
+    commit, push.
     """
     logger.debug(
-        f"influxq command called with parent cli params {pprint.pformat(ctx.parent.params)} and command params {pprint.pformat(ctx.params)}"
+        f"influxq command called with parent cli params {pprint.pformat(ctx.parent.params)} "
+        f"and command params {pprint.pformat(ctx.params)}"
     )
 
     influxdb_db_name = ctx.params["db_name"]
@@ -377,9 +468,6 @@ def influxq(ctx, db_name, url):
     # populate context object for cli handler to access
     ctx.obj.epoch_ts = epoch_ts
     ctx.obj.value = value
-
-    # TODO handle success/failure criteria as part of query or... ?
-    ctx.obj.status = "success"
 
 
 if __name__ == "__main__":

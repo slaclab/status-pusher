@@ -1,14 +1,16 @@
 prometheus-api-client
+pydantic
 requests
 GitPython
 click
 loguru
-# influxdb_client
 #################
 # dev reqs follow
 #################
+pylint
 pytest
 coverage
 pytest-cov
 black
 ipython
+requests-mock

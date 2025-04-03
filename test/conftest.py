@@ -19,7 +19,7 @@ def repo_path(tmp_path: PosixPath) -> PosixPath:
     """
     tmpdir = tmp_path / "status_pusher_test_repo"
 
-    repo = Repo.init(tmpdir)
+    repo = Repo.init(tmpdir, b="main")
 
     # add a file in the tree
     intree_file_path = tmpdir / "file_in_tree.txt"
@@ -28,11 +28,12 @@ def repo_path(tmp_path: PosixPath) -> PosixPath:
     repo.index.add(intree_file_path)
     repo.index.commit("init commit - file_in_tree.txt")
 
-    # add an untracked file not in the tree
-    untracked_file_path = tmpdir / "file_not_in_tree.txt"
-    with open(untracked_file_path, "w") as f:
-        f.write("content of file_not_in_tree.txt")
-    # Note we will neither add nor commit this file
+    # add a test_report.txt log file in the tree
+    test_report_file_path = tmpdir / "test_report.log"
+    with open(test_report_file_path, "w") as f:
+        f.write("2024-11-23T01:23:40Z, success, 1.0")
+    repo.index.add(test_report_file_path)
+    repo.index.commit("commit test_report.log with 1 entry")
 
     yield PosixPath(repo.working_dir)
 
