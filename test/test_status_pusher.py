@@ -369,7 +369,7 @@ def test_promq_cli(git_repo: Repo, repo_path: PosixPath, tmp_path: PosixPath):
     mock_prom_qry.assert_called_with(query=mock_query)
 
     # assert status record SUCCESS
-    assert status_record.status == sp.Status.SUCCESS
+    assert status_record.status == "success"
 
     # assert status value 1.0
     assert status_record.value == 1.0
@@ -450,7 +450,7 @@ def test_influxq_cli(
     assert actual_result.exit_code == 0
 
     # assert status record SUCCESS
-    assert status_record.status == sp.Status.SUCCESS
+    assert status_record.status == "success"
 
     # assert status value 1.0
     assert status_record.value == 1.0

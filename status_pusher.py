@@ -63,7 +63,7 @@ class StatusRecord:
 
     value: Optional[float] = None
     epoch_ts: datetime.datetime = datetime.datetime.now().astimezone().timestamp()
-    status: Status = Status.UNKNOWN
+    status: Status = Status.UNKNOWN.value
 
 
 def git_clone(git_url: str, git_branch: str, git_dir, depth=10) -> git.Repo:
@@ -367,11 +367,11 @@ def cli(
 
         # handle success/failure criteria
         ctx.obj.status = (
-            Status.SUCCESS
+            Status.SUCCESS.value
             if ConditionComparitor[success_condition].value(
                 ctx.obj.value, success_value
             )
-            else Status.FAILED
+            else Status.FAILED.value
         )
         logger.debug(
             f"Computed {ConditionComparitor[success_condition].value}"
